@@ -1,9 +1,11 @@
 import {
   type KeyedTemplateResolver,
-  type KeyValueMap,
   type KeyedTemplateDirective,
   type TemplateOptimizationCallback
 } from '../resolver/template-resolver'
+import {
+  type KeyValueMap
+} from '../resolver/basic-types'
 
 export type ParseStringCallback = (source: string, context: KeyValueMap) => unknown
 

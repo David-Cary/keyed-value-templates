@@ -1,10 +1,12 @@
 import {
   type KeyedTemplateResolver,
-  type KeyValueMap,
   type KeyedTemplateDirective,
-  type AnyObject,
   type TemplateOptimizationResult
 } from '../resolver/template-resolver'
+import {
+  type KeyValueMap,
+  type AnyObject
+} from '../resolver/basic-types'
 
 /**
  * Acts as a reference to property function calls.

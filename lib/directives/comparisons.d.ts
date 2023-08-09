@@ -1,4 +1,5 @@
-import { type KeyedTemplateResolver, type KeyValueMap, type KeyedTemplateDirective } from '../resolver/template-resolver';
+import { type KeyedTemplateResolver, type KeyedTemplateDirective } from '../resolver/template-resolver';
+import { type KeyValueMap } from '../resolver/basic-types';
 /**
  * This simply wraps an argument list in an object.
  * @interface

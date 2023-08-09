@@ -1,4 +1,5 @@
-import { type KeyedTemplateResolver, type KeyValueMap, type KeyedTemplateDirective, type TemplateOptimizationResult, type TypeConversionCallback } from '../resolver/template-resolver';
+import { type KeyedTemplateResolver, type KeyedTemplateDirective, type TemplateOptimizationResult } from '../resolver/template-resolver';
+import { type KeyValueMap, type TypeConversionCallback } from '../resolver/basic-types';
 /**
  * This simply wraps a value in an object.
  * @template T

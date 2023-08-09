@@ -1,8 +1,10 @@
 import {
   type KeyedTemplateResolver,
-  type KeyValueMap,
   type KeyedTemplateDirective
 } from '../resolver/template-resolver'
+import {
+  type KeyValueMap
+} from '../resolver/basic-types'
 import {
   type MultiStepParams,
   MultiStepDirective

@@ -1,4 +1,5 @@
-import { type KeyedTemplateResolver, type KeyValueMap, type KeyedTemplateDirective } from '../resolver/template-resolver';
+import { type KeyedTemplateResolver, type KeyedTemplateDirective } from '../resolver/template-resolver';
+import { type KeyValueMap } from '../resolver/basic-types';
 /**
  * This captures the state of an "if-then" statement immediately before the target branch is resolved.
  * @interface

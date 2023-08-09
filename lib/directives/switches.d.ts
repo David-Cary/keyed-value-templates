@@ -1,4 +1,5 @@
-import { type KeyedTemplateResolver, type KeyValueMap, type KeyedTemplateDirective } from '../resolver/template-resolver';
+import { type KeyedTemplateResolver, type KeyedTemplateDirective } from '../resolver/template-resolver';
+import { type KeyValueMap } from '../resolver/basic-types';
 import { type MultiStepParams, MultiStepDirective } from './scripting';
 /**
  * This describes the potential contents of a case block within a switch statement.

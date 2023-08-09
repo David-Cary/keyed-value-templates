@@ -1,5 +1,7 @@
-export type KeyValueMap = Record<string, unknown>
-export type AnyObject = KeyValueMap | unknown[]
+import {
+  type KeyValueMap,
+  type TypeConversionCallback
+} from './basic-types'
 
 /**
  * These are used to attach additional data to the results of trying to optimize a template item.
@@ -23,6 +25,8 @@ export type TemplateOptimizationCallback = (
  * @template P, R
  */
 export interface KeyedTemplateDirective<P = unknown, R = unknown> {
+  readonly paramsSchema?: KeyValueMap
+  readonly returnSchema?: KeyValueMap
   /**
    * Performs typecasting and a first pass of initialization on a provided key value map.
    * @function
@@ -61,7 +65,12 @@ export interface KeyedTemplateDirective<P = unknown, R = unknown> {
   optimizeTemplate?: TemplateOptimizationCallback
 }
 
-export type TypeConversionCallback<F = unknown, T = unknown> = (value: F) => T
+/**
+ * Used to mark a value as a potential directive that resolved to the target type.
+ * @template T
+ * @type {KeyValueMap | T}
+ */
+export type ReplacableValue<T> = KeyValueMap | T
 
 /**
  * These resolvers provide a suite of utility functions for converting keyed template objects to their intended values for a particular context.

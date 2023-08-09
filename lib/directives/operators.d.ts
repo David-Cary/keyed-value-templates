@@ -1,4 +1,5 @@
-import { type KeyedTemplateResolver, type KeyValueMap, type KeyedTemplateDirective } from '../resolver/template-resolver';
+import { type KeyedTemplateResolver, type KeyedTemplateDirective } from '../resolver/template-resolver';
+import { type KeyValueMap } from '../resolver/basic-types';
 import { type ArgumentsWrapper } from './comparisons';
 import { type ValueWrapper } from './typing';
 export type RepeatableOperationDirectiveCallback<T = unknown> = (a: T, b: T) => T;

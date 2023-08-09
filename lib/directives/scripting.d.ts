@@ -1,4 +1,5 @@
-import { type KeyedTemplateResolver, type KeyValueMap, type KeyedTemplateDirective, type TemplateOptimizationResult, type AnyObject } from '../resolver/template-resolver';
+import { type KeyedTemplateResolver, type KeyedTemplateDirective, type TemplateOptimizationResult } from '../resolver/template-resolver';
+import { type KeyValueMap, type AnyObject } from '../resolver/basic-types';
 import { type PropertyLookupStep, GetNestedValueDirective } from './lookup';
 import { type ValueWrapper } from './typing';
 /**

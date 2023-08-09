@@ -1,4 +1,5 @@
-import { type KeyedTemplateResolver, type KeyValueMap, type KeyedTemplateDirective, type TemplateOptimizationCallback } from '../resolver/template-resolver';
+import { type KeyedTemplateResolver, type KeyedTemplateDirective, type TemplateOptimizationCallback } from '../resolver/template-resolver';
+import { type KeyValueMap } from '../resolver/basic-types';
 export type ParseStringCallback = (source: string, context: KeyValueMap) => unknown;
 export type ContextResolverCallback = (context: KeyValueMap) => unknown;
 export type ParseStringResolverCallback = (source: string) => ContextResolverCallback;
