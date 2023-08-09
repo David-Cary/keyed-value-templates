@@ -325,3 +325,6 @@ const resolver = new KeyedTemplateResolver({
 In addition to template resolution, the resolver can try to perform template optimization.  This involves stepping through the template and resolving any values that aren't context dependent or otherwise protected.  This can help with things like precalculating values or unpacking commands to populate objects or arrays.  The results of this optimization attempt will be an object with a value property containing the converted template and an 'executable' flag.
 
 This optimization is normally delegated to the directive, with the resolver using whatever the directive's optimizeTemplate returns if that function is present.  Note that those function have the same return type as the resolver does.  When not present it will try to optimize each of the directive's parameters.  Should all of those come back with the executable flag set to true, it will then execute the directive with an empty context.
+
+## Generics
+We've provided 2 generic types for values that might be or contain directive requests.  Use ReplacableValue for primitives that might have their spot taken by a directive request.  For object whose properties might be similarly replaced, use KeyedValueTemplate.  That functions much like Partial in that it modifies all properties of the target type.
