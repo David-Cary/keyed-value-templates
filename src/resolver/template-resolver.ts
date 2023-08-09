@@ -66,11 +66,20 @@ export interface KeyedTemplateDirective<P = unknown, R = unknown> {
 }
 
 /**
- * Used to mark a value as a potential directive that resolved to the target type.
+ * Used to mark a value as a potential directive request, presumably one that resolved to the target type.
  * @template T
  * @type {KeyValueMap | T}
  */
 export type ReplacableValue<T> = KeyValueMap | T
+
+/**
+ * This lets you treat all properties of an object as potential directive requests.
+ * @template T
+ * @type {KeyValueMap | T}
+ */
+export type KeyedValueTemplate<T> = {
+  [Property in keyof T]: ReplacableValue<T[Property]>
+}
 
 /**
  * These resolvers provide a suite of utility functions for converting keyed template objects to their intended values for a particular context.
