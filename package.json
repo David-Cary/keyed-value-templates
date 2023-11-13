@@ -1,6 +1,6 @@
 {
   "name": "keyed-value-templates",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Generates values from templates defined by placeholder objects with a specific property",
   "main": "lib/index.js",
   "files": [
@@ -22,7 +22,7 @@
   "license": "SimPL-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/David-Cary/dom-shorthand-template"
+    "url": "https://github.com/David-Cary/keyed-value-templates.git"
   },
   "devDependencies": {
     "@types/jest": "^29.5.2",
