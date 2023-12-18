@@ -177,6 +177,28 @@ describe("KeyedTemplateResolver with default directives", () => {
       )
       expect(value).toBe("[me]")
     })
+    test("nested fuctions should respect 'this' argument", () => {
+      const value = resolver.resolveValue(
+        {
+          $use: 'get',
+          path: [
+            'resolver',
+            {
+              name: 'getDirectiveIdFor',
+              args: [
+                {
+                  $use: 'na'
+                }
+              ]
+            }
+          ]
+        },
+        {
+          resolver
+        }
+      )
+      expect(value).toBe("na")
+    })
     test("should allow extending objects via the Object constructor", () => {
       const value = resolver.resolveValue(
         {

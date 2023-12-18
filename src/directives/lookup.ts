@@ -198,7 +198,7 @@ export class GetNestedValueDirective implements KeyedTemplateDirective<GetNested
     const callback = (source as KeyValueMap)[request.name]
     if (typeof callback === 'function' && callback != null) {
       const args = (request.args != null) ? request.args : []
-      return callback.apply(null, args)
+      return callback.apply(source, args)
     }
   }
 
