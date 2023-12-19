@@ -1,0 +1,7 @@
+import {
+  KeyedTemplateResolver,
+  KeyValueMap,
+  DEFAULT_DIRECTIVES
+} from '../src/index'
+
+describe("KeyedTemplateResolver with default directives", ()
