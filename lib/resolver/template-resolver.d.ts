@@ -190,7 +190,7 @@ export declare class KeyedTemplateResolver {
      * @param {unknown} source - value to be copied
      * @returns {unknown} deep copy of the source
      */
-    createDeepCopy(source: unknown): unknown;
+    createDeepCopy(source: unknown, copyMap?: Map<any, any>): unknown;
     /**
      * Retrieves a version of the template with context independent members already processed.
      * This should result in faster processing when the context is applied as some values are precalculated.

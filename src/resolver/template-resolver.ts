@@ -359,15 +359,27 @@ export class KeyedTemplateResolver {
    * @param {unknown} source - value to be copied
    * @returns {unknown} deep copy of the source
    */
-  createDeepCopy (source: unknown): unknown {
+  createDeepCopy (
+    source: unknown,
+    copyMap = new Map<any, any>()
+  ): unknown {
     if (typeof source === 'object' && source != null) {
+      if (copyMap.has(source)) {
+        return copyMap.get(source)
+      }
       if (Array.isArray(source)) {
-        return source.map(item => this.createDeepCopy(item))
+        const result = source.slice()
+        copyMap.set(source, result)
+        for (let i = 0; i < result.length; i++) {
+          result[i] = this.createDeepCopy(result[i], copyMap)
+        }
+        return result
       }
       const valueMap = source as KeyValueMap
       const result: KeyValueMap = {}
+      copyMap.set(source, result)
       for (const key in valueMap) {
-        result[key] = this.createDeepCopy(valueMap[key])
+        result[key] = this.createDeepCopy(valueMap[key], copyMap)
       }
       return result
     }
