@@ -51,6 +51,7 @@ export * from './strings'
 export * from './functions'
 export * from './comparisons'
 export * from './operators'
+export * from './presentation'
 export * from './scripting'
 export * from './switches'
 

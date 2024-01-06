@@ -13,6 +13,13 @@ describe("KeyedTemplateResolver", () => {
       item.self = item
       const clone = resolver.createDeepCopy(item) as Record<string, any>
       expect(clone.self).toEqual(clone)
+      /*
+      const map = new Map<any, any>()
+      map.set(item, { ref: item })
+      const val = map.get(item)
+      expect(map.has(item)).toEqual(true)
+      expect(val.ref).toEqual(item)
+      */
     })
   })
 })

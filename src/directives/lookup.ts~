@@ -93,6 +93,7 @@ export class GetNestedValueDirective implements KeyedTemplateDirective<GetNested
   ): unknown {
     let target: unknown = source ?? context
     for (const step of path) {
+      const targetType = typeof target
       if (target != null) {
         const parent = target as PropertyOwner
         const resolvedStep = resolver.resolveValue(step, context)

@@ -278,70 +278,6 @@ Should you want to inject function calls directly into you template, you can do 
 ### Literal and Resolve Directives
 The LiteralValueDirective lets you skip any directive processing, should you want to preserve said value.  Should you want to crack that protection and resolve those directive requests anyway, you can do so through the ResolveValueDirective.  These are both available through DEFAULT_DIRECTIVES as 'value' and 'resolve' respectively.
 
-### Data View Directives
-Note that you can use the `MultiStepDirective` class to inject variables into specialized data types.  Should you want to do the same thing without setting up the steps explicitly, you can do so using the optional `DataViewDirective`.  For example, using "present" as directive's key might look something like this:
-```
-{
-  $use: 'present',
-  data: {
-    text: 'wrapped'
-  },
-  template: {
-    $use: 'value',
-    value: {
-      $use: '+',
-      args: [
-        '[',
-        {
-          $use: 'getVar',
-          path: ['text']
-        },
-        ']'
-      ]
-    }
-  }
-}
-```
-
-Note that we used a literal directive for the template.  That template will get a resolution pass before the local variables are applied, so making it a literal prevents the nested directed from being executed before the local variables are set up.
-
-While this does make the syntax a literal more verbose, it also means you can use a get directive to pull templates in from the context, like so:
-```
-const resolver = new KeyedTemplateResolver(
-  {
-    ...DEFAULT_DIRECTIVES,
-    present: new DataViewDirective()
-  }
-)
-const value = resolver.resolveValue(
-  {
-    $use: 'present',
-    data: {
-      text: 'wrapped'
-    },
-    template: {
-      $use: 'get',
-      path: ['wrapText']
-    }
-  },
-  {
-    wrapText: {
-      $use: '+',
-      args: [
-        '[',
-        {
-          $use: 'getVar',
-          path: ['text']
-        },
-        ']'
-      ]
-    }
-  }
-)
-```
-
-Doing so allows for easy reuse of such templates.  If the context contains a references to the initial template, you can even referenced nested sub-templates from within that base template.
-
 ### String Parsing Directives
 If you have a string parsing library you want to plug into the template resolver, you can do so through the ParseStringDirective.  When executed, that directive will use run the text parameter through it's parseString callback and return the result.
 
@@ -384,6 +320,8 @@ const resolver = new KeyedTemplateResolver({
   context: DEFAULT_DIRECTIVES.context
 })
 ```
+
+
 
 ## Template Optimization
 In addition to template resolution, the resolver can try to perform template optimization.  This involves stepping through the template and resolving any values that aren't context dependent or otherwise protected.  This can help with things like precalculating values or unpacking commands to populate objects or arrays.  The results of this optimization attempt will be an object with a value property containing the converted template and an 'executable' flag.
