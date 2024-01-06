@@ -253,7 +253,6 @@ describe("DataViewDirective", () => {
       const blanked = resolver.resolveValue(
         {
           $use: 'present',
-          data: {},
           template: {
             $use: 'get',
             path: ['wrapText']

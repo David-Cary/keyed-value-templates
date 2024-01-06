@@ -28,7 +28,7 @@ export class DataViewDirective implements KeyedTemplateDirective<DataViewParamet
     context: KeyValueMap,
     resolver: KeyedTemplateResolver
   ): DataViewParameters {
-    const resolvedData = resolver.resolveObject(params.data as KeyValueMap, context)
+    const resolvedData = resolver.resolveValue(params.data, context)
     return {
       data: (
         typeof params.data === 'object' &&
