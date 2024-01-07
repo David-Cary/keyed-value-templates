@@ -7,7 +7,7 @@ import {
 } from '../resolver/basic-types'
 
 /**
- * Covers request to resolve a template using the provided local variables.
+ * Covers requests to resolve a template using the provided local variables.
  * @interface
  * @property {KeyValueMap} data - map of local variables to be used
  * @property {any} template - value to be resolved using the provided variables
@@ -15,6 +15,7 @@ import {
 export interface DataViewParameters {
   data: KeyValueMap
   template: any
+  templateKey?: string
 }
 
 /**
@@ -31,13 +32,18 @@ export class DataViewDirective implements KeyedTemplateDirective<DataViewParamet
     const resolvedData = resolver.resolveValue(params.data, context)
     return {
       data: (
-        typeof params.data === 'object' &&
-          params.data != null &&
-          !Array.isArray(params.data)
+        typeof resolvedData === 'object' &&
+          resolvedData != null &&
+          !Array.isArray(resolvedData)
       )
         ? resolvedData as KeyValueMap
         : {},
-      template: resolver.resolveValue(params.template, context)
+      template: resolver.resolveValue(params.template, context),
+      templateKey: resolver.resolveTypedValue(
+        params.templateKey,
+        context,
+        (value) => value != null ? String(value) : undefined
+      )
     }
   }
 
@@ -50,6 +56,9 @@ export class DataViewDirective implements KeyedTemplateDirective<DataViewParamet
     const localContext = resolver.createLocalContext(context)
     for (const key in spec.data) {
       resolver.setLocalValue(localContext, key, spec.data[key])
+    }
+    if (spec.templateKey != null) {
+      resolver.setLocalValue(localContext, spec.templateKey, spec.template)
     }
     const result = resolver.resolveValue(spec.template, localContext)
     return result

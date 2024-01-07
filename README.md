@@ -254,6 +254,35 @@ The other major type of loop supported right out the box is the RepetitionDirect
 
 For DEFAULT_DIRECTIVES, both of these loops recognize 'continue', 'break', and 'return' directives that function much like their Javascript counterparts.  Continue is a SignalDirective that's assigned a BREAK_PASS priority by the loops while break is a similar directive that gets assigned the EXIT_LOOP priority.  The return direct is as per the 'run' directive with the RETURN_VALUE priority assigned.
 
+### Mapping Object Values
+As you may have noticed, you can use the looping with an iteration directive to map object values to a new object, much like the map function of javascript arrays.  As of version 1.1.2, we've added the optional `MapValuesDirective` to make such remapping easier.  This function takes in a source object and allows for `getKey` and `getValue` transforms.
+
+For examples, the following would convert "{ x: 1 }" to "{ _x: '1' }", provided you registered "remap" as a MapValuesDirective.
+```
+{
+  $use: 'remap',
+  source: { x: 1 }
+  getKey: {
+    $use: '+',
+    args: [
+      '_',
+      {
+        $use: 'getVar',
+        path: ['$key']
+      }
+    ]
+  },
+  getValue: {
+    $use: 'cast',
+    value: {
+      $use: 'getVar',
+      path: ['$value']
+    },
+    as: 'string'
+  }
+}
+```
+
 ### Switch Directives
 Switch statement are significantly trickier than if-then statement or value lookups as they allow for different value duplicating some or all of each other's behavior.  This library tries to mimic that flexibility through the SwitchDirective (listed as 'switch' in DEFAULT_DIRECTIVES).  This directive looks for the 'value' parameter and compares it to everything in the provided 'cases' directive.  Each item in the cases parameter is assumed to have a 'steps' property as per the MultiStepDirective but may also have a 'case' property as well.
 

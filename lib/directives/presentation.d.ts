@@ -1,7 +1,7 @@
 import { type KeyedTemplateResolver, type KeyedTemplateDirective } from '../resolver/template-resolver';
 import { type KeyValueMap } from '../resolver/basic-types';
 /**
- * Covers request to resolve a template using the provided local variables.
+ * Covers requests to resolve a template using the provided local variables.
  * @interface
  * @property {KeyValueMap} data - map of local variables to be used
  * @property {any} template - value to be resolved using the provided variables
@@ -9,6 +9,7 @@ import { type KeyValueMap } from '../resolver/basic-types';
 export interface DataViewParameters {
     data: KeyValueMap;
     template: any;
+    templateKey?: string;
 }
 /**
  * This directive resolves the provided template using the specified local variables.

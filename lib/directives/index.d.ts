@@ -3,6 +3,7 @@ import { LoopingDirectiveExitPriority } from './scripting';
 export * from './lookup';
 export * from './typing';
 export * from './conditionals';
+export * from './iteration';
 export * from './strings';
 export * from './functions';
 export * from './comparisons';

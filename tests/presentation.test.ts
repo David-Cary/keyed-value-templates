@@ -1,6 +1,7 @@
 import {
   KeyedTemplateResolver,
   DataViewDirective,
+  MapValuesDirective,
   DEFAULT_DIRECTIVES
 } from '../src/index'
 
@@ -8,7 +9,8 @@ describe("DataViewDirective", () => {
   const resolver = new KeyedTemplateResolver(
     {
       ...DEFAULT_DIRECTIVES,
-      present: new DataViewDirective()
+      present: new DataViewDirective(),
+      remap: new MapValuesDirective()
     }
   )
   describe("execute", () => {
@@ -261,6 +263,175 @@ describe("DataViewDirective", () => {
         context
       )
       expect(blanked).toBe("[_na_]")
+    })
+  })
+  test("should support recursive views if a template key is provided", () => {
+    const value = resolver.resolveValue(
+      {
+        $use: 'present',
+        data: {
+          target: {
+            value: "A",
+            children: [
+              {
+                value: "A1",
+                children: []
+              },
+              {
+                value: "A2",
+                children: [
+                  {
+                    value: "A2.1"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        template: {
+          $use: 'value',
+          value: {
+            text: {
+              $use: 'getVar',
+              path: [
+                'target',
+                'value'
+              ]
+            },
+            items: {
+              $use: 'getVar',
+              path: [
+                'target',
+                'children',
+                {
+                  name: 'map',
+                  args: [
+                    {
+                      $use: 'callback',
+                      value: {
+                        $use: 'present',
+                        data: {
+                          target: {
+                            $use: 'get',
+                            path: [
+                              '$args',
+                              0
+                            ]
+                          }
+                        },
+                        template: {
+                          $use: 'getVar',
+                          path: ['$template']
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        templateKey: '$template'
+      },
+      {}
+    )
+    expect(value).toEqual({
+      text: "A",
+      items: [
+        {
+          text: "A1",
+          items: []
+        },
+        {
+          text: "A2",
+          items: [
+            {
+              text: "A2.1"
+            }
+          ]
+        }
+      ]
+    })
+  })
+  test("if MapValuesDirective is available, should be able to use that for recursion", () => {
+    const value = resolver.resolveValue(
+      {
+        $use: 'present',
+        data: {
+          target: {
+            value: "A",
+            children: [
+              {
+                value: "A1",
+                children: []
+              },
+              {
+                value: "A2",
+                children: [
+                  {
+                    value: "A2.1"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        template: {
+          $use: 'value',
+          value: {
+            text: {
+              $use: 'getVar',
+              path: [
+                'target',
+                'value'
+              ]
+            },
+            items: {
+              $use: 'remap',
+              source: {
+                $use: 'getVar',
+                path: [
+                  'target',
+                  'children'
+                ]
+              },
+              getValue: {
+                $use: 'present',
+                data: {
+                  target: {
+                    $use: 'getVar',
+                    path: ['$value']
+                  }
+                },
+                template: {
+                  $use: 'getVar',
+                  path: ['$template']
+                }
+              }
+            }
+          }
+        },
+        templateKey: '$template'
+      },
+      {}
+    )
+    //expect(value).toEqual([])
+    expect(value).toEqual({
+      text: "A",
+      items: [
+        {
+          text: "A1",
+          items: []
+        },
+        {
+          text: "A2",
+          items: [
+            {
+              text: "A2.1"
+            }
+          ]
+        }
+      ]
     })
   })
 })
