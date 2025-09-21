@@ -189,11 +189,20 @@ export class KeyedTemplateResolver {
       const resolvedValue = directive.execute(value, context, this)
       return resolvedValue
     }
-    const copy: KeyValueMap = {}
-    for (const key in value) {
-      copy[key] = this.resolveValue(value[key], context)
+    if (typeof value === 'object') {
+      if (Array.isArray(value)) {
+        return this.resolveValues(value, context)
+      }
+      if (value != null) {
+        const valueMap = value
+        const copy: KeyValueMap = {}
+        for (const key in valueMap) {
+          copy[key] = this.resolveValue(valueMap[key], context)
+        }
+        return copy
+      }
     }
-    return copy
+    return value
   }
 
   /**

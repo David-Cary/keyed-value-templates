@@ -111,7 +111,7 @@ export declare class KeyedTemplateResolver {
     /**
      * Tries to resolve an object as a possible template, then tries to resolve the object's property values.
      * @function
-     * @param {unknown} value - object to be converted
+     * @param {KeyValueMap} value - object to be converted
      * @param {KeyValueMap} context - extra data to be made available for resolution
      * @returns {unknown} version of the object with templates resolved
      */
