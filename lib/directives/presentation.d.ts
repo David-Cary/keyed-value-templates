@@ -10,6 +10,7 @@ export interface DataViewParameters {
     data: KeyValueMap;
     template: any;
     templateKey?: string;
+    preprocess?: boolean;
 }
 /**
  * This directive resolves the provided template using the specified local variables.
