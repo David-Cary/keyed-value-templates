@@ -40,6 +40,56 @@ describe("DataViewDirective", () => {
       )
       expect(value).toBe("[wrapped]")
     })
+    test("should use via property if template property is absent", () => {
+      const value = resolver.resolveValue(
+        {
+          $use: 'present',
+          data: {
+            text: 'wrapped'
+          },
+          via: {
+            $use: 'value',
+            value: {
+              $use: '+',
+              args: [
+                '[',
+                {
+                  $use: 'getVar',
+                  path: ['text']
+                },
+                ']'
+              ]
+            }
+          }
+        },
+        {}
+      )
+      expect(value).toBe("[wrapped]")
+    })
+    test("should skip initial template resolution if preprocessing is off", () => {
+      const value = resolver.resolveValue(
+        {
+          $use: 'present',
+          data: {
+            text: 'wrapped'
+          },
+          template: {
+            $use: '+',
+            args: [
+              '[',
+              {
+                $use: 'getVar',
+                path: ['text']
+              },
+              ']'
+            ]
+          },
+          preprocess: false
+        },
+        {}
+      )
+      expect(value).toBe("[wrapped]")
+    })
     test("should support internal duplication with supporting context", () => {
       const source = [
         {
@@ -415,7 +465,6 @@ describe("DataViewDirective", () => {
       },
       {}
     )
-    //expect(value).toEqual([])
     expect(value).toEqual({
       text: "A",
       items: [

@@ -371,6 +371,32 @@ const value = resolver.resolveValue(
 
 Doing so allows for easy reuse of such templates.  If the context contains a references to the initial template, you can even referenced nested sub-templates from within that base template.
 
+As of 1.1.4, a couple optional parameters have been added:
+ - The "preprocess" flag tells the directive to perform the aforementioned initial template resolution.  If set to false that step will be skipped, letting you use a template directive with out needing to nest it in a literal.  This defaults to true, so if the property is not included the template will get that initial resolution pass as normal.
+ - The "via" property simply acts as a shorter alias to the template property, with template taking precedence if both are present.
+
+Here's what the first example looks like with both of those in effect:
+```
+{
+  $use: 'present',
+  data: {
+    text: 'wrapped'
+  },
+  via: {
+    $use: '+',
+    args: [
+      '[',
+      {
+        $use: 'getVar',
+        path: ['text']
+      },
+      ']'
+    ]
+  },
+  preprocess: false
+}
+```
+
 ### String Parsing Directives
 If you have a string parsing library you want to plug into the template resolver, you can do so through the ParseStringDirective.  When executed, that directive will use run the text parameter through it's parseString callback and return the result.
 

@@ -16,6 +16,7 @@ export interface DataViewParameters {
   data: KeyValueMap
   template: any
   templateKey?: string
+  preprocess?: boolean
 }
 
 /**
@@ -30,6 +31,9 @@ export class DataViewDirective implements KeyedTemplateDirective<DataViewParamet
     resolver: KeyedTemplateResolver
   ): DataViewParameters {
     const resolvedData = resolver.resolveValue(params.data, context)
+    const preprocess = params.preprocess != null
+      ? resolver.resolveTypedValue(params.preprocess, context, Boolean)
+      : true
     return {
       data: (
         typeof resolvedData === 'object' &&
@@ -38,7 +42,9 @@ export class DataViewDirective implements KeyedTemplateDirective<DataViewParamet
       )
         ? resolvedData as KeyValueMap
         : {},
-      template: resolver.resolveValue(params.template, context),
+      template: preprocess
+        ? resolver.resolveValue(params.template ?? params.via, context)
+        : params.template,
       templateKey: resolver.resolveTypedValue(
         params.templateKey,
         context,
