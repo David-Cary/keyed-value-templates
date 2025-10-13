@@ -34,6 +34,7 @@ export class DataViewDirective implements KeyedTemplateDirective<DataViewParamet
     const preprocess = params.preprocess != null
       ? resolver.resolveTypedValue(params.preprocess, context, Boolean)
       : true
+    const template = params.template ?? params.via
     return {
       data: (
         typeof resolvedData === 'object' &&
@@ -43,8 +44,8 @@ export class DataViewDirective implements KeyedTemplateDirective<DataViewParamet
         ? resolvedData as KeyValueMap
         : {},
       template: preprocess
-        ? resolver.resolveValue(params.template ?? params.via, context)
-        : params.template,
+        ? resolver.resolveValue(template, context)
+        : template,
       templateKey: resolver.resolveTypedValue(
         params.templateKey,
         context,

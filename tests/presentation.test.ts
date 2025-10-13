@@ -73,7 +73,7 @@ describe("DataViewDirective", () => {
           data: {
             text: 'wrapped'
           },
-          template: {
+          via: {
             $use: '+',
             args: [
               '[',
