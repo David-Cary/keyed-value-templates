@@ -47,6 +47,13 @@ In that example, the "get" directive uses the provided path to get the name valu
 ### Local Contexts
 Some directives make use of what we call a local context.  This is a copy of the provided context, letting those pass on a modified variant of the context for use by their contents.  This is primarily used to attach local variables to a context, using the localVariablesKey mentioned above.
 
+### Resolution States
+As of version 1.2.0, when resolving an object the resolution state is made available via the context.  This gets attached to the context using the `resolutionStateKey` of the resolver (defaults to "$resolving").
+
+Said state information always includes the object being resolved as the source.  If the source is a template, the matching directive gets attach as the via property.  For other objects, the "property" value covers the name of the property being resolved.  For array, "index" covers a similar role of exposing the index of the item being resolved.  For typed arrays the conversion callback is attached as the "coerce" property.  In either case, the cloned object is available as the "result" property.
+
+For nested objects, you can access the parent object's resolution state through each state's "parent" property.
+
 ## Directives
 We use the `KeyedTemplateDirective` class for objects that provide special template resolution handling for particular marked objects.  The primary feature of these is their `execute` function that handles the actual conversion.  This takes in a parameter object, the target context, and a KeyedTemplateResolver.
 

@@ -94,13 +94,16 @@ describe("KeyedTemplateResolver with default directives", () => {
     })
     test("should retrieve a copy of the context if there's no path", () => {
       const context = { id: 1 }
-      const value = resolver.resolveValue(
-        {
-          $use: 'get'
-        },
-        context
-      )
-      expect(value).toEqual(context)
+      const template = {
+        $use: 'get'
+      }
+      const value = resolver.resolveValue(template, context)
+      expect(value).toEqual({
+        ...context,
+        $resolving: {
+          source: template
+        }
+      })
       expect(value).not.toBe(context)
     })
     test("should be able to call provided array functions", () => {
@@ -327,6 +330,24 @@ describe("KeyedTemplateResolver with default directives", () => {
         { value: '?' }
       )
       expect(value).toBe('error')
+    })
+    test("should be able to access resolution state stack", () => {
+      const template = {
+        name: 'Bob',
+        item: {
+          ownerName: {
+            $use: 'get',
+            path: ['$resolving', 'parent', 'parent', 'source', 'name']
+          }
+        }
+      }
+      const value = resolver.resolveValue(template)
+      expect(value).toEqual({
+        ...template,
+        item: {
+          ownerName: template.name
+        }
+      })
     })
   })
   describe("if-then directive", () => {

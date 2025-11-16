@@ -1,4 +1,4 @@
-import { type KeyValueMap, type TypeConversionCallback } from './basic-types';
+import { type AnyObject, type KeyValueMap, type TypeConversionCallback } from './basic-types';
 /**
  * These are used to attach additional data to the results of trying to optimize a template item.
  * @interface
@@ -60,6 +60,26 @@ export type KeyedValueTemplate<T> = {
     [Property in keyof T]: ReplacableValue<T[Property]>;
 };
 /**
+ * These are used to pass information on the object being resolved to nested resolution calls.
+ * @interface
+ * @property {ObjectResolutionState | undefined} parent - state of parent object resolution
+ * @property {AnyObject} source - object being resolved
+ * @property {string | undefined} property - name of property being resolved
+ * @property {number | undefined} index - index of item being resolved
+ * @property {KeyedTemplateDirective | undefined} via - directive handling the resolution
+ * @property {TypeConversionCallback | undefined} coerce - conversion callback to be applied
+ * @property {any} result - pending resolved value
+ */
+export interface ObjectResolutionState {
+    parent?: ObjectResolutionState;
+    source: AnyObject;
+    property?: string;
+    index?: number;
+    via?: KeyedTemplateDirective;
+    coerce?: TypeConversionCallback;
+    result?: any;
+}
+/**
  * These resolvers provide a suite of utility functions for converting keyed template objects to their intended values for a particular context.
  * In this case, a keyed template is an object with a specified property that not only indicates the object should be processes, but also what process should be used to convert it.
  * @class
@@ -71,7 +91,8 @@ export declare class KeyedTemplateResolver {
     readonly directives: Record<string, KeyedTemplateDirective>;
     readonly directivesKey: string;
     readonly localVariablesKey: string;
-    constructor(directives?: Record<string, KeyedTemplateDirective>, directivesKey?: string, localVariablesKey?: string);
+    readonly resolutionStateKey: string;
+    constructor(directives?: Record<string, KeyedTemplateDirective>, directivesKey?: string, localVariablesKey?: string, resolutionStateKey?: string);
     /**
      * Resolves all template objects in the provided value.
      * @function
@@ -116,6 +137,23 @@ export declare class KeyedTemplateResolver {
      * @returns {unknown} version of the object with templates resolved
      */
     resolveObject(value: KeyValueMap, context?: KeyValueMap): unknown;
+    /**
+     * Returns a copy of the target object with all properties resolved.
+     * @function
+     * @param {KeyValueMap} value - object to be converted
+     * @param {KeyValueMap} context - extra data to be made available for resolution
+     * @returns {unknown} version of the object with properties resolved
+     */
+    resolvePropertiesOf(value: KeyValueMap, context?: KeyValueMap): KeyValueMap;
+    /**
+     * Resolves the target object by way of the provided directive.
+     * @function
+     * @param {KeyedTemplateDirective} directive - directive to be used
+     * @param {KeyValueMap} params - object to be resolved
+     * @param {KeyValueMap} context - extra data to be made available for resolution
+     * @returns {unknown} version of the object with templates resolved
+     */
+    resolveViaDirective(directive: KeyedTemplateDirective, params?: KeyValueMap, context?: KeyValueMap): unknown;
     /**
      * Tries to resolve an object as a possible template, but leaves any resulting property values alone.
      * @function
@@ -172,6 +210,37 @@ export declare class KeyedTemplateResolver {
      * @returns {unknown[]} array of all resolved values
      */
     resolveAsArray(value: unknown, context?: KeyValueMap): unknown[];
+    /**
+     * Retrieves resolution state from provided context.
+     * @function
+     * @param {KeyValueMap} context - object containing the target state
+     * @returns {ObjectResolutionState | undefined} validated state data
+     */
+    getResolutionState(context?: KeyValueMap): ObjectResolutionState | undefined;
+    /**
+     * Tries to set the resolution state of the context if that property is available.
+     * Otherwise, this returns a subcontext with the state attached.
+     * @function
+     * @param {KeyValueMap} context - object to be modified or cloned
+     * @param {ObjectResolutionState} state - values to be attached
+     * @returns {KeyValueMap} cloned or modified context
+     */
+    setResolutionState(context: KeyValueMap, state: ObjectResolutionState): KeyValueMap;
+    /**
+     * Moves from current resolution state through all it's ancestors, applying the provided callback to each stage.
+     * If the callback return false the traversal will stop at the target state.
+     * @function
+     * @param {KeyValueMap} context - object containing the target state
+     * @param {(state: ObjectResolutionState) => boolean | undefined} callback - operation to be applied to each state
+     */
+    traverseResolutionAncestry(context: KeyValueMap, callback: (state: ObjectResolutionState) => boolean | undefined): void;
+    /**
+     * Checks if value is valid resolution state.
+     * @function
+     * @param {any} value - value to be evaluated
+     * @returns {ObjectResolutionState | undefined} value if valid
+     */
+    validateResolutionState(value: any): ObjectResolutionState | undefined;
     /**
      * Resolves the target as a template and converts the results to a key value map.
      * For strings, this wraps them in an object where the key and value are the same.
