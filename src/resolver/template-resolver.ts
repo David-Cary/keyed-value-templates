@@ -281,7 +281,8 @@ export class KeyedTemplateResolver {
   ): unknown {
     const state: ObjectResolutionState = {
       parent: this.getResolutionState(context),
-      source: params
+      source: params,
+      via: directive
     }
     const subcontext = this.setResolutionState(context, state)
     const resolvedValue = directive.execute(params, subcontext, this)
@@ -442,6 +443,25 @@ export class KeyedTemplateResolver {
       [this.resolutionStateKey]: state
     }
     return subcontext
+  }
+
+  /**
+   * Moves from current resolution state through all it's ancestors, returning the first matching state found.
+   * @function
+   * @param {KeyValueMap} context - object containing the target state
+   * @param {(state: ObjectResolutionState) => boolean} callback - check to be applied to each state
+   * @returns {ObjectResolutionState | undefined} matching state, if any
+   */
+  findResolutionState(
+    context: KeyValueMap,
+    callback: (state: ObjectResolutionState) => boolean
+  ): ObjectResolutionState | undefined {
+    let state = this.getResolutionState(context)
+    while (state != null) {
+      const matched = callback(state)
+      if (matched) return state
+      state = state.parent
+    }
   }
 
   /**

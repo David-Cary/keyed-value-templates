@@ -227,6 +227,14 @@ export declare class KeyedTemplateResolver {
      */
     setResolutionState(context: KeyValueMap, state: ObjectResolutionState): KeyValueMap;
     /**
+     * Moves from current resolution state through all it's ancestors, returning the first matching state found.
+     * @function
+     * @param {KeyValueMap} context - object containing the target state
+     * @param {(state: ObjectResolutionState) => boolean} callback - check to be applied to each state
+     * @returns {ObjectResolutionState | undefined} matching state, if any
+     */
+    findResolutionState(context: KeyValueMap, callback: (state: ObjectResolutionState) => boolean): ObjectResolutionState | undefined;
+    /**
      * Moves from current resolution state through all it's ancestors, applying the provided callback to each stage.
      * If the callback return false the traversal will stop at the target state.
      * @function

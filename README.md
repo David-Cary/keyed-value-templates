@@ -52,7 +52,9 @@ As of version 1.2.0, when resolving an object the resolution state is made avail
 
 Said state information always includes the object being resolved as the source.  If the source is a template, the matching directive gets attach as the via property.  For other objects, the "property" value covers the name of the property being resolved.  For array, "index" covers a similar role of exposing the index of the item being resolved.  For typed arrays the conversion callback is attached as the "coerce" property.  In either case, the cloned object is available as the "result" property.
 
-For nested objects, you can access the parent object's resolution state through each state's "parent" property.
+For nested objects, you can access the parent object's resolution state through each state's "parent" property.  You can also use the resolver's `traverseResolutionAncestry` function with the context and a callback to apply said callback to each state.  You can abort this traversal by having the callback return false.
+
+Version 1.2.1 expands on that by adding `findResolutionState`.  As with the above function, this takes a context and a callback, returning the matching state when the callback returns true.
 
 ## Directives
 We use the `KeyedTemplateDirective` class for objects that provide special template resolution handling for particular marked objects.  The primary feature of these is their `execute` function that handles the actual conversion.  This takes in a parameter object, the target context, and a KeyedTemplateResolver.
