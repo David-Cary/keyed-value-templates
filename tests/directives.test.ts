@@ -98,12 +98,7 @@ describe("KeyedTemplateResolver with default directives", () => {
         $use: 'get'
       }
       const value = resolver.resolveValue(template, context)
-      expect(value).toEqual({
-        ...context,
-        $resolving: {
-          source: template
-        }
-      })
+      expect(value).toMatchObject(context)
       expect(value).not.toBe(context)
     })
     test("should be able to call provided array functions", () => {

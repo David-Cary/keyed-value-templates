@@ -180,11 +180,10 @@ export class KeyedTemplateResolver {
   ): unknown[] {
     const copy: unknown[] = []
     const state: ObjectResolutionState = {
-      parent: this.getResolutionState(context),
       source: value,
       result: copy
     }
-    const subcontext = this.setResolutionState(context, state)
+    const subcontext = this.createChildStateContext(context, state)
     for (let i = 0; i < value.length; i++) {
       state.index = i
       copy[i] = this.resolveValue(value[i], subcontext)
@@ -208,12 +207,11 @@ export class KeyedTemplateResolver {
   ): T[] {
     const copy: T[] = []
     const state: ObjectResolutionState = {
-      parent: this.getResolutionState(context),
       source: value,
       coerce: convertor,
       result: copy
     }
-    const subcontext = this.setResolutionState(context, state)
+    const subcontext = this.createChildStateContext(context, state)
     for (let i = 0; i < value.length; i++) {
       state.index = i
       copy[i] = this.resolveTypedValue(value[i], subcontext, convertor)
@@ -254,11 +252,10 @@ export class KeyedTemplateResolver {
   ): KeyValueMap {
     const copy: KeyValueMap = {}
     const state: ObjectResolutionState = {
-      parent: this.getResolutionState(context),
       source: value,
       result: copy
     }
-    const subcontext = this.setResolutionState(context, state)
+    const subcontext = this.createChildStateContext(context, state)
     for (const key in value) {
       state.property = key
       copy[key] = this.resolveValue(value[key], subcontext)
@@ -280,11 +277,10 @@ export class KeyedTemplateResolver {
     context: KeyValueMap = {}
   ): unknown {
     const state: ObjectResolutionState = {
-      parent: this.getResolutionState(context),
       source: params,
       via: directive
     }
-    const subcontext = this.setResolutionState(context, state)
+    const subcontext = this.createChildStateContext(context, state)
     const resolvedValue = directive.execute(params, subcontext, this)
     return resolvedValue
   }
@@ -423,24 +419,25 @@ export class KeyedTemplateResolver {
   }
 
   /**
-   * Tries to set the resolution state of the context if that property is available.
-   * Otherwise, this returns a subcontext with the state attached.
+   * Creates a copy of the target context with the provided state attached as a child of the current state.
    * @function
-   * @param {KeyValueMap} context - object to be modified or cloned
+   * @param {KeyValueMap} context - values to be copied
    * @param {ObjectResolutionState} state - values to be attached
-   * @returns {KeyValueMap} cloned or modified context
+   * @returns {KeyValueMap} copy of the provided context with the target state data
    */
-  setResolutionState (
+  createChildStateContext (
     context: KeyValueMap,
     state: ObjectResolutionState
   ): KeyValueMap {
-    if (this.resolutionStateKey in context) {
-      context[this.resolutionStateKey] = state
-      return context
-    }
-    const subcontext = {
-      ...context,
-      [this.resolutionStateKey]: state
+    const subcontext = { ...context }
+    if (this.resolutionStateKey != null) {
+      const parent = this.getResolutionState(context)
+      if (parent != null) {
+        state.parent = parent
+      } else if (state.parent != null) {
+        delete state.parent
+      }
+      subcontext[this.resolutionStateKey] = state
     }
     return subcontext
   }
@@ -452,7 +449,7 @@ export class KeyedTemplateResolver {
    * @param {(state: ObjectResolutionState) => boolean} callback - check to be applied to each state
    * @returns {ObjectResolutionState | undefined} matching state, if any
    */
-  findResolutionState(
+  findResolutionState (
     context: KeyValueMap,
     callback: (state: ObjectResolutionState) => boolean
   ): ObjectResolutionState | undefined {

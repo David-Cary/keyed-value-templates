@@ -1,6 +1,6 @@
 {
   "name": "keyed-value-templates",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "Generates values from templates defined by placeholder objects with a specific property",
   "main": "lib/index.js",
   "files": [

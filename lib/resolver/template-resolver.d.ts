@@ -218,14 +218,13 @@ export declare class KeyedTemplateResolver {
      */
     getResolutionState(context?: KeyValueMap): ObjectResolutionState | undefined;
     /**
-     * Tries to set the resolution state of the context if that property is available.
-     * Otherwise, this returns a subcontext with the state attached.
+     * Creates a copy of the target context with the provided state attached as a child of the current state.
      * @function
-     * @param {KeyValueMap} context - object to be modified or cloned
+     * @param {KeyValueMap} context - values to be copied
      * @param {ObjectResolutionState} state - values to be attached
-     * @returns {KeyValueMap} cloned or modified context
+     * @returns {KeyValueMap} copy of the provided context with the target state data
      */
-    setResolutionState(context: KeyValueMap, state: ObjectResolutionState): KeyValueMap;
+    createChildStateContext(context: KeyValueMap, state: ObjectResolutionState): KeyValueMap;
     /**
      * Moves from current resolution state through all it's ancestors, returning the first matching state found.
      * @function
