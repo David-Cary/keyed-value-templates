@@ -1,6 +1,7 @@
 import {
   type KeyedTemplateResolver,
-  type KeyedTemplateDirective
+  type KeyedTemplateDirective,
+  type ObjectResolutionState
 } from '../resolver/template-resolver'
 import {
   type KeyValueMap
@@ -47,9 +48,20 @@ export class SwitchDirective implements KeyedTemplateDirective<SwitchDirectiveFo
     context: KeyValueMap,
     resolver: KeyedTemplateResolver
   ): SwitchDirectiveFork {
+    const state = resolver.getResolutionState(context)
     return {
-      value: resolver.resolveValue(params.value, context),
-      cases: resolver.getArray(params.cases, context)
+      value: resolver.processParameter(
+        params,
+        'value',
+        (value) => resolver.resolveValue(value, context),
+        state
+      ),
+      cases: resolver.processParameter(
+        params,
+        'cases',
+        (value) => resolver.getArray(value, context),
+        state
+      )
     }
   }
 
@@ -60,9 +72,12 @@ export class SwitchDirective implements KeyedTemplateDirective<SwitchDirectiveFo
   ): unknown {
     const spec = this.processParams(params, context, resolver)
     const localContext = resolver.createLocalContext(context)
+    const state = resolver.setParentStateOf({ source: spec.cases }, localContext)
+    resolver.setResolutionState(localContext, state)
     let matched = false
     let defaultBlock: SwitchDirectiveBlock | undefined
-    for (const item of spec.cases) {
+    for (state.index = 0; state.index < spec.cases.length; state.index++) {
+      const item = spec.cases[state.index]
       const block = this.getCaseBlock(item, localContext, resolver)
       if ('case' in block) {
         if (!matched) {
@@ -112,11 +127,23 @@ export class SwitchDirective implements KeyedTemplateDirective<SwitchDirectiveFo
         }
       }
       const valueMap = source as KeyValueMap
+      const state: ObjectResolutionState = { source: valueMap }
+      const subcontext = resolver.createChildStateContext(context, state)
       const result: SwitchDirectiveBlock = {
-        steps: resolver.getArray(valueMap.steps, context)
+        steps: resolver.processParameter(
+          valueMap,
+          'steps',
+          (value) => resolver.getArray(value, subcontext),
+          state
+        )
       }
       if ('case' in valueMap) {
-        result.case = resolver.resolveValue(valueMap.case, context)
+        result.case = resolver.processParameter(
+          valueMap,
+          'case',
+          (value) => resolver.resolveValue(value, subcontext),
+          state
+        )
       }
       return result
     }

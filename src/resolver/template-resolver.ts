@@ -419,6 +419,22 @@ export class KeyedTemplateResolver {
   }
 
   /**
+   * Sets the resolution state of the provided context.
+   * @function
+   * @param {KeyValueMap} context - object to be modified
+   * @param {ObjectResolutionState} state - state to be attached
+   * @returns {KeyValueMap} copy of the provided context with the target state data
+   */
+  setResolutionState (
+    context: KeyValueMap,
+    state: ObjectResolutionState
+  ): void {
+    if (this.resolutionStateKey != '') {
+      context[this.resolutionStateKey] = state
+    }
+  }
+
+  /**
    * Creates a copy of the target context with the provided state attached as a child of the current state.
    * @function
    * @param {KeyValueMap} context - values to be copied
@@ -429,17 +445,33 @@ export class KeyedTemplateResolver {
     context: KeyValueMap,
     state: ObjectResolutionState
   ): KeyValueMap {
-    const subcontext = { ...context }
-    if (this.resolutionStateKey != null) {
-      const parent = this.getResolutionState(context)
-      if (parent != null) {
-        state.parent = parent
-      } else if (state.parent != null) {
-        delete state.parent
-      }
+    if (this.resolutionStateKey != '') {
+      this.setParentStateOf(state, context)
+      const subcontext = { ...context }
       subcontext[this.resolutionStateKey] = state
+      return subcontext
     }
-    return subcontext
+    return context
+  }
+
+  /**
+   * Sets the parent of the target resolution state as the current resolution state for the provided context.
+   * @function
+   * @param {ObjectResolutionState} target - state to be modified
+   * @param {KeyValueMap} context - source of the parent state
+   * @returns {ObjectResolutionState} the provided state
+   */
+  setParentStateOf (
+    target: ObjectResolutionState,
+    context: KeyValueMap = {}
+  ): ObjectResolutionState {
+    const parent = this.getResolutionState(context)
+    if (parent != null) {
+      target.parent = parent
+    } else if (target.parent != null) {
+      delete target.parent
+    }
+    return target
   }
 
   /**
@@ -535,7 +567,8 @@ export class KeyedTemplateResolver {
    */
   createDeepCopy (
     source: unknown,
-    copyMap = new Map<any, any>()
+    copyMap = new Map<any, any>(),
+    path: any[] = []
   ): unknown {
     if (typeof source === 'object' && source != null) {
       if (copyMap.has(source)) {
@@ -553,11 +586,40 @@ export class KeyedTemplateResolver {
       const result: KeyValueMap = {}
       copyMap.set(source, result)
       for (const key in valueMap) {
-        result[key] = this.createDeepCopy(valueMap[key], copyMap)
+        path.push(key)
+        try {
+          result[key] = this.createDeepCopy(valueMap[key], copyMap, path)
+        } catch (error: any) {
+          throw(new Error(JSON.stringify({error: error.message,path, key})))
+        }
+        path.pop()
       }
       return result
     }
     return source
+  }
+
+  /**
+   * Tries to transform the target parameter and return the results.
+   * If a resolution state is provided, said state's property value will be set accordingly before execution.
+   * @function
+   * @template T
+   * @param {KeyValueMap} source - target property owner
+   * @param {string} key - name of property to be evaluated
+   * @param {(value: any) => T} process - operation to be applied to the target value
+   * @param {ObjectResolutionState | undefined} state - resolution state to be updated
+   * @returns {T} transformed results
+   */
+  processParameter<T = any> (
+    source: KeyValueMap,
+    key: string,
+    process: (value: any) => T,
+    state?: ObjectResolutionState
+  ): T {
+    if (state != null) state.property = key
+    const value = source[key]
+    const result = process(value)
+    return result
   }
 
   /**

@@ -50,8 +50,14 @@ export class MultiStepDirective implements KeyedTemplateDirective<MultiStepParam
     context: KeyValueMap,
     resolver: KeyedTemplateResolver
   ): MultiStepParams {
+    const state = resolver.getResolutionState(context)
     return {
-      steps: resolver.getArray(params.steps, context)
+      steps: resolver.processParameter(
+        params,
+        'steps',
+        (value) => resolver.getArray(value, context),
+        state
+      )
     }
   }
 
@@ -61,8 +67,7 @@ export class MultiStepDirective implements KeyedTemplateDirective<MultiStepParam
     resolver: KeyedTemplateResolver
   ): unknown {
     const spec = this.processParams(params, context, resolver)
-    const localContext = resolver.createLocalContext(context)
-    const result = this.runSteps(spec.steps, localContext, resolver)
+    const result = this.runSteps(spec.steps, context, resolver)
     return result.value
   }
 
@@ -79,9 +84,13 @@ export class MultiStepDirective implements KeyedTemplateDirective<MultiStepParam
     context: KeyValueMap,
     resolver: KeyedTemplateResolver
   ): Partial<MultiStepDirectiveExit> {
-    for (const step of steps) {
+    const localContext = resolver.createLocalContext(context)
+    const state = resolver.setParentStateOf({ source: steps }, localContext)
+    resolver.setResolutionState(localContext, state)
+    for (state.index = 0; state.index < steps.length; state.index++) {
+      const step = steps[state.index]
       const directiveId = resolver.getDirectiveIdFor(step)
-      const value = resolver.resolveValue(step, context)
+      const value = resolver.resolveValue(step, localContext)
       if (directiveId != null && this.exitIds.includes(directiveId)) {
         return {
           directiveId,
@@ -138,8 +147,14 @@ export class ReturnValueDirective implements KeyedTemplateDirective<ValueWrapper
     context: KeyValueMap,
     resolver: KeyedTemplateResolver
   ): ValueWrapper {
+    const state = resolver.getResolutionState(context)
     return {
-      value: resolver.resolveValue(params.value, context)
+      value: resolver.processParameter(
+        params,
+        'value',
+        (value) => resolver.resolveValue(value, context),
+        state
+      )
     }
   }
 
@@ -263,9 +278,20 @@ export class IterationDirective extends LoopingDirective {
     context: KeyValueMap,
     resolver: KeyedTemplateResolver
   ): IterationParams {
+    const state = resolver.getResolutionState(context)
     return {
-      steps: resolver.getArray(params.steps, context),
-      for: resolver.executeDirectiveFor(params.for, context),
+      steps: resolver.processParameter(
+        params,
+        'steps',
+        (value) => resolver.getArray(value, context),
+        state
+      ),
+      for: resolver.processParameter(
+        params,
+        'for',
+        (value) => resolver.executeDirectiveFor(value, context),
+        state
+      ),
       return: params.return
     }
   }
@@ -280,15 +306,20 @@ export class IterationDirective extends LoopingDirective {
       const localContext = resolver.createLocalContext(context)
       let result: LoopingDirectiveExit | undefined
       if (Array.isArray(spec.for)) {
-        for (let index = 0; index < spec.for.length; index++) {
-          resolver.setLocalValue(localContext, '$index', index)
-          resolver.setLocalValue(localContext, '$value', spec.for[index])
+        const state = resolver.setParentStateOf({ source: spec.for }, localContext)
+        resolver.setResolutionState(localContext, state)
+        for (state.index = 0; state.index < spec.for.length; state.index++) {
+          resolver.setLocalValue(localContext, '$index', state.index)
+          resolver.setLocalValue(localContext, '$value', spec.for[state.index])
           result = this.runPass(spec.steps, localContext, resolver)
           if (result.priority >= LoopingDirectiveExitPriority.EXIT_LOOP) break
         }
       } else {
         const valueMap = spec.for as KeyValueMap
+        const state = resolver.setParentStateOf({ source: valueMap }, localContext)
+        resolver.setResolutionState(localContext, state)
         for (const key in valueMap) {
+          state.property = key
           resolver.setLocalValue(localContext, '$key', key)
           resolver.setLocalValue(localContext, '$value', valueMap[key])
           result = this.runPass(spec.steps, localContext, resolver)
@@ -331,11 +362,32 @@ export class RepetitionDirective extends LoopingDirective {
     context: KeyValueMap,
     resolver: KeyedTemplateResolver
   ): RepetitionParams {
+    const state = resolver.getResolutionState(context)
     return {
-      steps: resolver.getArray(params.steps, context),
-      from: this.resolveNumber(params.from, context, resolver, 1),
-      to: this.resolveNumber(params.to, context, resolver, 1),
-      rate: this.resolveNumber(params.from, context, resolver, 1),
+      steps: resolver.processParameter(
+        params,
+        'steps',
+        (value) => resolver.getArray(value, context),
+        state
+      ),
+      from: resolver.processParameter(
+        params,
+        'from',
+        (value) => this.resolveNumber(value, context, resolver, 1),
+        state
+      ),
+      to: resolver.processParameter(
+        params,
+        'to',
+        (value) => this.resolveNumber(value, context, resolver, 1),
+        state
+      ),
+      rate: resolver.processParameter(
+        params,
+        'rate',
+        (value) => this.resolveNumber(value, context, resolver, 1),
+        state
+      ),
       return: params.return
     }
   }
@@ -346,6 +398,8 @@ export class RepetitionDirective extends LoopingDirective {
     resolver: KeyedTemplateResolver
   ): unknown {
     const spec = this.processParams(params, context, resolver)
+    const state = resolver.getResolutionState(context)
+    if (state != null) state.property  = undefined
     const localContext = resolver.createLocalContext(context)
     let result: LoopingDirectiveExit | undefined
     this.forRange(
@@ -440,8 +494,14 @@ export class SetLocalValueDirective implements KeyedTemplateDirective<SetLocalVa
     context: KeyValueMap,
     resolver: KeyedTemplateResolver
   ): SetLocalValueParams {
+    const state = resolver.getResolutionState(context)
     return {
-      path: resolver.getArray(params.path, context),
+      path: resolver.processParameter(
+        params,
+        'path',
+        (value) => resolver.getArray(value, context),
+        state
+      ),
       value: params.value
     }
   }
@@ -466,6 +526,8 @@ export class SetLocalValueDirective implements KeyedTemplateDirective<SetLocalVa
         const resolvedStep = resolver.resolveValue(finalStep, context)
         const validStep = this._getter.getValidStepFrom(resolvedStep)
         if (validStep != null) {
+          const state = resolver.getResolutionState(context)
+          if (state != null) state.property = 'value'
           const resolvedValue = resolver.resolveValue(spec.value, context)
           this.setObjectProperty(target as AnyObject, validStep, resolvedValue)
         }

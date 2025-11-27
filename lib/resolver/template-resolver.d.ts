@@ -218,6 +218,14 @@ export declare class KeyedTemplateResolver {
      */
     getResolutionState(context?: KeyValueMap): ObjectResolutionState | undefined;
     /**
+     * Sets the resolution state of the provided context.
+     * @function
+     * @param {KeyValueMap} context - object to be modified
+     * @param {ObjectResolutionState} state - state to be attached
+     * @returns {KeyValueMap} copy of the provided context with the target state data
+     */
+    setResolutionState(context: KeyValueMap, state: ObjectResolutionState): void;
+    /**
      * Creates a copy of the target context with the provided state attached as a child of the current state.
      * @function
      * @param {KeyValueMap} context - values to be copied
@@ -225,6 +233,14 @@ export declare class KeyedTemplateResolver {
      * @returns {KeyValueMap} copy of the provided context with the target state data
      */
     createChildStateContext(context: KeyValueMap, state: ObjectResolutionState): KeyValueMap;
+    /**
+     * Sets the parent of the target resolution state as the current resolution state for the provided context.
+     * @function
+     * @param {ObjectResolutionState} target - state to be modified
+     * @param {KeyValueMap} context - source of the parent state
+     * @returns {ObjectResolutionState} the provided state
+     */
+    setParentStateOf(target: ObjectResolutionState, context?: KeyValueMap): ObjectResolutionState;
     /**
      * Moves from current resolution state through all it's ancestors, returning the first matching state found.
      * @function
@@ -266,7 +282,19 @@ export declare class KeyedTemplateResolver {
      * @param {unknown} source - value to be copied
      * @returns {unknown} deep copy of the source
      */
-    createDeepCopy(source: unknown, copyMap?: Map<any, any>): unknown;
+    createDeepCopy(source: unknown, copyMap?: Map<any, any>, path?: any[]): unknown;
+    /**
+     * Tries to transform the target parameter and return the results.
+     * If a resolution state is provided, said state's property value will be set accordingly before execution.
+     * @function
+     * @template T
+     * @param {KeyValueMap} source - target property owner
+     * @param {string} key - name of property to be evaluated
+     * @param {(value: any) => T} process - operation to be applied to the target value
+     * @param {ObjectResolutionState | undefined} state - resolution state to be updated
+     * @returns {T} transformed results
+     */
+    processParameter<T = any>(source: KeyValueMap, key: string, process: (value: any) => T, state?: ObjectResolutionState): T;
     /**
      * Retrieves a version of the template with context independent members already processed.
      * This should result in faster processing when the context is applied as some values are precalculated.

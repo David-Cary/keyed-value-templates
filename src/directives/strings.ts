@@ -46,8 +46,14 @@ export class ParseStringDirective implements KeyedTemplateDirective<TextWrapper>
     context: KeyValueMap,
     resolver: KeyedTemplateResolver
   ): TextWrapper {
+    const state = resolver.getResolutionState(context)
     return {
-      text: resolver.resolveTypedValue(params.text, context, String)
+      text: resolver.processParameter(
+        params,
+        'text',
+        (value) => resolver.resolveTypedValue(value, context, String),
+        state
+      )
     }
   }
 

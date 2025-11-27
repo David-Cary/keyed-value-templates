@@ -40,6 +40,8 @@ export class CallbackDirective implements KeyedTemplateDirective<ValueWrapper> {
     context: KeyValueMap,
     resolver: KeyedTemplateResolver
   ): unknown {
+    const state = resolver.getResolutionState(context)
+    if (state != null) state.property = 'value'
     return this.castToFunction(params.value, context, resolver)
   }
 
@@ -161,9 +163,20 @@ export class TypeConversionDirective implements KeyedTemplateDirective<TypeConve
     context: KeyValueMap,
     resolver: KeyedTemplateResolver
   ): TypeConversionParams {
+    const state = resolver.getResolutionState(context)
     return {
-      value: resolver.resolveValue(params.value, context),
-      as: resolver.getTypedArray(params.as, context, String)
+      value: resolver.processParameter(
+        params,
+        'value',
+        (value) => resolver.resolveValue(value, context),
+        state
+      ),
+      as: resolver.processParameter(
+        params,
+        'as',
+        (value) => resolver.getTypedArray(value, context, String),
+        state
+      )
     }
   }
 
@@ -288,6 +301,8 @@ export class ResolveValueDirective implements KeyedTemplateDirective<ValueWrappe
     resolver: KeyedTemplateResolver
   ): unknown {
     const spec = this.processParams(params, context, resolver)
+    const state = resolver.getResolutionState(context)
+    if (state != null) state.property = 'value'
     return resolver.resolveValue(spec.value, context)
   }
 }

@@ -1,6 +1,7 @@
 import {
   type KeyedTemplateResolver,
-  type KeyedTemplateDirective
+  type KeyedTemplateDirective,
+  type ObjectResolutionState
 } from '../resolver/template-resolver'
 import {
   type KeyValueMap
@@ -37,8 +38,14 @@ export class RepeatedOperationDirective implements KeyedTemplateDirective<Argume
     context: KeyValueMap,
     resolver: KeyedTemplateResolver
   ): ArgumentsWrapper {
+    const state = resolver.getResolutionState(context)
     return {
-      args: resolver.getArray(params.args, context)
+      args: resolver.processParameter(
+        params,
+        'args',
+        (value) => resolver.getArray(value, context),
+        state
+      )
     }
   }
 
@@ -49,12 +56,14 @@ export class RepeatedOperationDirective implements KeyedTemplateDirective<Argume
   ): unknown {
     const spec = this.processParams(params, context, resolver)
     if (spec.args.length > 0) {
-      let left = resolver.resolveValue(spec.args[0], context)
-      for (let i = 1; i < spec.args.length; i++) {
+      const state: ObjectResolutionState = { source: spec.args, index: 0 }
+      const subcontext = resolver.createChildStateContext(context, state)
+      let left = resolver.resolveValue(spec.args[0], subcontext)
+      for (state.index = 1; state.index < spec.args.length; state.index++) {
         if (this.checkExitSignal?.(left) === true) {
           break
         }
-        const right = resolver.resolveValue(spec.args[i], context)
+        const right = resolver.resolveValue(spec.args[state.index], subcontext)
         left = this.callback(left, right)
       }
       return left
@@ -93,8 +102,14 @@ export class TypedRepeatedOperationDirective<T> implements KeyedTemplateDirectiv
     context: KeyValueMap,
     resolver: KeyedTemplateResolver
   ): ArgumentsWrapper {
+    const state = resolver.getResolutionState(context)
     return {
-      args: resolver.getArray(params.args, context)
+      args: resolver.processParameter(
+        params,
+        'args',
+        (value) => resolver.getArray(value, context),
+        state
+      )
     }
   }
 
@@ -105,12 +120,14 @@ export class TypedRepeatedOperationDirective<T> implements KeyedTemplateDirectiv
   ): T | undefined {
     const spec = this.processParams(params, context, resolver)
     if (spec.args.length > 0) {
-      let left = resolver.resolveTypedValue(spec.args[0], context, this.convertor)
-      for (let i = 1; i < spec.args.length; i++) {
+      const state: ObjectResolutionState = { source: spec.args, index: 0 }
+      const subcontext = resolver.createChildStateContext(context, state)
+      let left = resolver.resolveTypedValue(spec.args[0], subcontext, this.convertor)
+      for (state.index = 1; state.index < spec.args.length; state.index++) {
         if (this.checkExitSignal?.(left) === true) {
           break
         }
-        const right = resolver.resolveTypedValue(spec.args[i], context, this.convertor)
+        const right = resolver.resolveTypedValue(spec.args[state.index], subcontext, this.convertor)
         left = this.callback(left, right)
       }
       return left
@@ -275,6 +292,8 @@ export class NegationOperatorDirective implements KeyedTemplateDirective<ValueWr
     context: KeyValueMap,
     resolver: KeyedTemplateResolver
   ): boolean {
+    const state = resolver.getResolutionState(context)
+    if (state != null) state.property = 'value'
     const resolvedValue = resolver.resolveValue(params.value, context)
     const castValue = Boolean(resolvedValue)
     return !castValue

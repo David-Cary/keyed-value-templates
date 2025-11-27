@@ -30,11 +30,22 @@ export class DataViewDirective implements KeyedTemplateDirective<DataViewParamet
     context: KeyValueMap,
     resolver: KeyedTemplateResolver
   ): DataViewParameters {
-    const resolvedData = resolver.resolveValue(params.data, context)
+    const state = resolver.getResolutionState(context)
+    const resolvedData = resolver.processParameter(
+      params,
+      'data',
+      (value) => resolver.resolveValue(value, context),
+      state
+    )
     const preprocess = params.preprocess != null
-      ? resolver.resolveTypedValue(params.preprocess, context, Boolean)
+      ? resolver.processParameter(
+        params,
+        'preprocess',
+        (value) => resolver.resolveTypedValue(value, context, Boolean),
+        state
+      )
       : true
-    const template = params.template ?? params.via
+    const templateProperty = 'template' in params ? 'template' : 'via'
     return {
       data: (
         typeof resolvedData === 'object' &&
@@ -44,12 +55,22 @@ export class DataViewDirective implements KeyedTemplateDirective<DataViewParamet
         ? resolvedData as KeyValueMap
         : {},
       template: preprocess
-        ? resolver.resolveValue(template, context)
-        : template,
-      templateKey: resolver.resolveTypedValue(
-        params.templateKey,
-        context,
-        (value) => value != null ? String(value) : undefined
+        ? resolver.processParameter(
+          params,
+          templateProperty,
+          (value) => resolver.resolveValue(value, context),
+          state
+        )
+        : params[templateProperty],
+      templateKey: resolver.processParameter(
+        params,
+        'templateKey',
+        (value) => resolver.resolveTypedValue(
+          value,
+          context,
+          (value) => value != null ? String(value) : undefined
+        ),
+        state
       )
     }
   }
@@ -60,6 +81,7 @@ export class DataViewDirective implements KeyedTemplateDirective<DataViewParamet
     resolver: KeyedTemplateResolver
   ): unknown {
     const spec = this.processParams(params, context, resolver)
+    if (!this.validateTemplate(spec.template, context, resolver)) return null
     const localContext = resolver.createLocalContext(context)
     for (const key in spec.data) {
       resolver.setLocalValue(localContext, key, spec.data[key])
@@ -67,7 +89,23 @@ export class DataViewDirective implements KeyedTemplateDirective<DataViewParamet
     if (spec.templateKey != null) {
       resolver.setLocalValue(localContext, spec.templateKey, spec.template)
     }
+    const state = resolver.getResolutionState(context)
+    if (state != null) state.property = undefined
     const result = resolver.resolveValue(spec.template, localContext)
     return result
+  }
+  
+  validateTemplate (
+    template: any,
+    context: KeyValueMap,
+    resolver: KeyedTemplateResolver
+  ): boolean {
+    // Safeguard against a context being set to the template as that can cause infinite looping.
+    if (
+      typeof template === 'object' &&
+      template != null &&
+      resolver.resolutionStateKey in template
+    ) return false
+    return true
   }
 }

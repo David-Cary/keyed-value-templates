@@ -332,7 +332,7 @@ describe("KeyedTemplateResolver with default directives", () => {
         item: {
           ownerName: {
             $use: 'get',
-            path: ['$resolving', 'parent', 'parent', 'source', 'name']
+            path: ['$resolving', 'parent', 'parent', 'parent', 'source', 'name']
           }
         }
       }

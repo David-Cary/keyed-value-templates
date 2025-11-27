@@ -1,6 +1,7 @@
 import {
   type KeyedTemplateResolver,
-  type KeyedTemplateDirective
+  type KeyedTemplateDirective,
+  type ObjectResolutionState
 } from '../resolver/template-resolver'
 import {
   type KeyValueMap
@@ -37,8 +38,14 @@ export class SerialComparisonDirective implements KeyedTemplateDirective<Argumen
     context: KeyValueMap,
     resolver: KeyedTemplateResolver
   ): ArgumentsWrapper {
+    const state = resolver.getResolutionState(context)
     return {
-      args: resolver.getArray(params.args, context)
+      args: resolver.processParameter(
+        params,
+        'args',
+        (value) => resolver.getArray(value, context),
+        state
+      )
     }
   }
 
@@ -49,9 +56,11 @@ export class SerialComparisonDirective implements KeyedTemplateDirective<Argumen
   ): boolean {
     const spec = this.processParams(params, context, resolver)
     if (spec.args.length > 1) {
-      let left = resolver.resolveValue(spec.args[0], context)
-      for (let i = 1; i < spec.args.length; i++) {
-        const right = resolver.resolveValue(spec.args[i], context)
+      const state: ObjectResolutionState = { source: spec.args, index: 0 }
+      const subcontext = resolver.createChildStateContext(context, state)
+      let left = resolver.resolveValue(spec.args[0], subcontext)
+      for (state.index = 1; state.index < spec.args.length; state.index++) {
+        const right = resolver.resolveValue(spec.args[state.index], subcontext)
         const result = this.callback(left, right)
         if (!result) {
           return false
@@ -187,10 +196,12 @@ export class ValueInRangeDirective implements KeyedTemplateDirective<ValueInRang
     context: KeyValueMap,
     resolver: KeyedTemplateResolver
   ): ValueInRangeParams {
+    const state = resolver.getResolutionState(context)
+    const resolveValue = (value: any) => resolver.resolveValue(value, context)
     return {
-      min: resolver.resolveValue(params.min, context),
-      max: resolver.resolveValue(params.max, context),
-      value: resolver.resolveValue(params.value, context)
+      min: resolver.processParameter(params, 'min', resolveValue, state),
+      max: resolver.processParameter(params, 'max', resolveValue, state),
+      value: resolver.processParameter(params, 'value', resolveValue, state)
     }
   }
 

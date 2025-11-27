@@ -1,6 +1,7 @@
 import {
   type KeyedTemplateResolver,
-  type KeyedTemplateDirective
+  type KeyedTemplateDirective,
+  type ObjectResolutionState
 } from '../resolver/template-resolver'
 import {
   type AnyObject,
@@ -31,11 +32,16 @@ export class MapValuesDirective implements KeyedTemplateDirective<MapValuesParam
     context: KeyValueMap,
     resolver: KeyedTemplateResolver
   ): MapValuesParameters {
-    const resolvedSource = resolver.resolveValue(params.source, context)
+    const state = resolver.getResolutionState(context)
+    const resolvedSource = resolver.processParameter(
+      params,
+      'source',
+      (value) => resolver.resolveValue(value, context),
+      state
+    )
     return {
       source: (
-        typeof resolvedSource === 'object' &&
-          resolvedSource != null
+        typeof resolvedSource === 'object' && resolvedSource != null
       )
         ? resolvedSource as AnyObject
         : undefined,
@@ -52,24 +58,30 @@ export class MapValuesDirective implements KeyedTemplateDirective<MapValuesParam
     const spec = this.processParams(params, context, resolver)
     const localContext = resolver.createLocalContext(context)
     if (spec.source != null) {
+      const state: ObjectResolutionState = {
+        parent: resolver.getResolutionState(context),
+        source: spec.source
+      }
+      localContext[resolver.resolutionStateKey] = state
       if (Array.isArray(spec.source)) {
         const results: any[] = []
-        for (let index = 0; index < spec.source.length; index++) {
-          resolver.setLocalValue(localContext, '$index', index)
-          resolver.setLocalValue(localContext, '$value', spec.source[index])
-          let position = index
+        for (state.index = 0; state.index < spec.source.length; state.index++) {
+          resolver.setLocalValue(localContext, '$index', state.index)
+          resolver.setLocalValue(localContext, '$value', spec.source[state.index])
+          let position = state.index
           if (spec.getKey != null) {
             position = Number(resolver.resolveValue(spec.getKey, localContext))
             if (isNaN(position)) continue
           }
           results[position] = spec.getValue != null
             ? resolver.resolveValue(spec.getValue, localContext)
-            : spec.source[index]
+            : spec.source[state.index]
         }
         return results
       }
       const results: Record<string, any> = {}
       for (const key in spec.source) {
+        state.property = key
         resolver.setLocalValue(localContext, '$key', key)
         resolver.setLocalValue(localContext, '$value', spec.source[key])
         let validKey = key

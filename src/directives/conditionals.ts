@@ -30,8 +30,14 @@ export class IfThenDirective implements KeyedTemplateDirective<IfThenFork> {
     context: KeyValueMap,
     resolver: KeyedTemplateResolver
   ): IfThenFork {
+    const state = resolver.getResolutionState(context)
     return {
-      if: resolver.resolveTypedValue(params.if, context, Boolean),
+      if: resolver.processParameter(
+        params,
+        'if',
+        (value) => resolver.resolveTypedValue(value, context, Boolean),
+        state
+      ),
       then: params.then,
       else: params.else
     }
@@ -43,6 +49,10 @@ export class IfThenDirective implements KeyedTemplateDirective<IfThenFork> {
     resolver: KeyedTemplateResolver
   ): unknown {
     const spec = this.processParams(params, context, resolver)
+    const state = resolver.getResolutionState(context)
+    if (state != null) {
+      state.property = spec.if ? 'then' : 'else'
+    }
     return spec.if
       ? resolver.resolveValue(spec.then, context)
       : resolver.resolveValue(spec.else, context)

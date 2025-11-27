@@ -27,9 +27,20 @@ export class FunctionCallDirective implements KeyedTemplateDirective<FunctionCal
     context: KeyValueMap,
     resolver: KeyedTemplateResolver
   ): FunctionCallParams {
+    const state = resolver.getResolutionState(context)
     return {
-      target: resolver.resolveValue(params.target, context),
-      args: resolver.resolveAsArray(params.args, context)
+      target: resolver.processParameter(
+        params,
+        'target',
+        (value) => resolver.resolveValue(value, context),
+        state
+      ),
+      args: resolver.processParameter(
+        params,
+        'args',
+        (value) => resolver.resolveAsArray(value, context),
+        state
+      )
     }
   }
 

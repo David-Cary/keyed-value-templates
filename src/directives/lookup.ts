@@ -1,6 +1,7 @@
 import {
   type KeyedTemplateResolver,
   type KeyedTemplateDirective,
+  type ObjectResolutionState,
   type TemplateOptimizationResult
 } from '../resolver/template-resolver'
 import {
@@ -51,9 +52,20 @@ export class GetNestedValueDirective implements KeyedTemplateDirective<GetNested
     context: KeyValueMap,
     resolver: KeyedTemplateResolver
   ): GetNestedValueParams {
+    const state = resolver.getResolutionState(context)
     return {
-      source: resolver.resolveValue(params.source, context),
-      path: resolver.getArray(params.path, context),
+      source: resolver.processParameter(
+        params,
+        'source',
+        (value) => resolver.resolveValue(value, context),
+        state
+      ),
+      path: resolver.processParameter(
+        params,
+        'path',
+        (value) => resolver.getArray(value, context),
+        state
+      ),
       default: params.default
     }
   }
@@ -71,6 +83,8 @@ export class GetNestedValueDirective implements KeyedTemplateDirective<GetNested
       resolver
     )
     if (value === undefined && spec.default !== undefined) {
+      const state = resolver.getResolutionState(context)
+      if (state != null) state.property = 'default'
       return resolver.resolveValue(spec.default, context)
     }
     return resolver.createDeepCopy(value)
@@ -91,11 +105,14 @@ export class GetNestedValueDirective implements KeyedTemplateDirective<GetNested
     context: KeyValueMap,
     resolver: KeyedTemplateResolver
   ): unknown {
-    let target: unknown = source ?? context
-    for (const step of path) {
+    const state: ObjectResolutionState = { source: path }
+    const subcontext = resolver.createChildStateContext(context, state)
+    let target: unknown = source ?? subcontext
+    for (state.index = 0; state.index < path.length; state.index++) {
+      const step = path[state.index]
       if (target != null) {
         const parent = target as PropertyOwner
-        const resolvedStep = resolver.resolveValue(step, context)
+        const resolvedStep = resolver.resolveValue(step, subcontext)
         const validStep = this.getValidStepFrom(resolvedStep)
         if (validStep == null) return undefined
         target = this.resolveStep(parent, validStep)
