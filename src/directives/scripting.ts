@@ -1,6 +1,7 @@
 import {
   type KeyedTemplateResolver,
   type KeyedTemplateDirective,
+  type ObjectResolutionState,
   type TemplateOptimizationResult
 } from '../resolver/template-resolver'
 import {
@@ -9,6 +10,7 @@ import {
 } from '../resolver/basic-types'
 import {
   type PropertyLookupStep,
+  type PropertyOwner,
   GetNestedValueDirective
 } from './lookup'
 import { type ValueWrapper } from './typing'
@@ -399,7 +401,7 @@ export class RepetitionDirective extends LoopingDirective {
   ): unknown {
     const spec = this.processParams(params, context, resolver)
     const state = resolver.getResolutionState(context)
-    if (state != null) state.property  = undefined
+    if (state != null) state.property = undefined
     const localContext = resolver.createLocalContext(context)
     let result: LoopingDirectiveExit | undefined
     this.forRange(
@@ -473,36 +475,47 @@ export class RepetitionDirective extends LoopingDirective {
 /**
  * Specifies the path to a given nested value and what it should be set to.
  * @interface
+ * @property {unknown} source - root object to be modified
  * @property {unknown[]} path - steps to the value's destination
  * @property {unknown} value - value to be stored
+ * @property {boolean} populate - signals whether subcontainers should be created
  */
-export interface SetLocalValueParams {
+export interface SetNestedValueParams {
+  source: unknown
   path: unknown[]
   value: unknown
+  populate: boolean
 }
 
 /**
  * This directive tries to assign a value to a particular path within the current context's local variables.
  * @class
- * @implements {KeyedTemplateDirective<SetLocalValueParams>}
+ * @implements {KeyedTemplateDirective<SetNestedValueParams>}
  */
-export class SetLocalValueDirective implements KeyedTemplateDirective<SetLocalValueParams> {
+export class SetLocalValueDirective implements KeyedTemplateDirective<SetNestedValueParams> {
   protected _getter = new GetNestedValueDirective()
 
   processParams (
     params: KeyValueMap,
     context: KeyValueMap,
     resolver: KeyedTemplateResolver
-  ): SetLocalValueParams {
+  ): SetNestedValueParams {
     const state = resolver.getResolutionState(context)
     return {
+      source: context[resolver.localVariablesKey],
       path: resolver.processParameter(
         params,
         'path',
         (value) => resolver.getArray(value, context),
         state
       ),
-      value: params.value
+      value: params.value,
+      populate: resolver.processParameter(
+        params,
+        'populate',
+        (value) => resolver.resolveTypedValue(value, context, Boolean),
+        state
+      )
     }
   }
 
@@ -512,26 +525,107 @@ export class SetLocalValueDirective implements KeyedTemplateDirective<SetLocalVa
     resolver: KeyedTemplateResolver
   ): void {
     const spec = this.processParams(params, context, resolver)
-    if (spec.path.length > 0) {
-      const parentPath = spec.path.slice()
-      parentPath.unshift(resolver.localVariablesKey)
-      const finalStep = parentPath.pop()
-      const target = this._getter.resolveUntypedPath(
-        context,
-        parentPath,
-        context,
-        resolver
-      )
-      if (typeof target === 'object' || target != null) {
-        const resolvedStep = resolver.resolveValue(finalStep, context)
+    this.setUnresolvedValue(
+      spec.source,
+      spec.path,
+      spec.value,
+      context,
+      resolver,
+      spec.populate
+    )
+  }
+
+  /**
+   * Uses a validated path to try setting the target value within the provided source.
+   * @function
+   * @param {unknown} source - expected container for the target value
+   * @param {unknown[]} path - steps to reach the target value
+   * @param {unknown} value - value to be assigned
+   * @param {boolean} populate - signals whether subcontainers should be created
+   */
+  setNestedValue (
+    source: unknown,
+    path: PropertyLookupStep[],
+    value: unknown,
+    populate = false
+  ): void {
+    if (path.length > 0) {
+      let target: unknown = source
+      const maxIndex = path.length - 1
+      for (let i = 0; i < maxIndex; i++) {
+        if (target != null) {
+          const step = path[i]
+          const parent = target as PropertyOwner
+          target = this._getter.resolveStep(parent, step)
+          if (target == null && populate) {
+            target = typeof path[i + 1] === 'number' ? [] : {}
+            this.setObjectProperty(parent as AnyObject, step, target)
+          }
+        } else break
+      }
+      if (target != null) {
+        const step = path[maxIndex]
+        this.setObjectProperty(target as AnyObject, step, value)
+      }
+    }
+  }
+
+  /**
+   * Tries to set a nested property via an unresolved path and value.
+   * The main advantages of using this over resolving everything and using setNestedValue
+   * are that it will skip resolution if there's an invalid step and that it updates the
+   * context's resolution state.
+   * @function
+   * @param {unknown} source - root object for the target property
+   * @param {unknown[]} path - unresolved path to the target property
+   * @param {unknown} value - value to be assigned
+   * @param {KeyValueMap} context - extra resolution data
+   * @param {KeyedTemplateResolver} resolver - template resolver to be used
+   * @param {boolean} populate - signals whether subcontainers should be created
+   */
+  setUnresolvedValue (
+    source: unknown,
+    path: unknown[],
+    value: unknown,
+    context: KeyValueMap,
+    resolver: KeyedTemplateResolver,
+    populate = false
+  ): void {
+    if (path.length > 0) {
+      const state: ObjectResolutionState = { source: path }
+      const subcontext = resolver.createChildStateContext(context, state)
+      let target: unknown = source ?? subcontext
+      const maxIndex = path.length - 1
+      if (state.parent != null) state.parent.property = 'path'
+      for (state.index = 0; state.index < maxIndex; state.index++) {
+        const step = path[state.index]
+        if (target != null) {
+          const resolvedStep = resolver.resolveValue(step, subcontext)
+          const validStep = this._getter.getValidStepFrom(resolvedStep)
+          if (validStep != null) {
+            const parent = target as PropertyOwner
+            target = this._getter.resolveStep(parent, validStep)
+            if (target == null && populate) {
+              target = typeof path[state.index + 1] === 'number' ? [] : {}
+              this.setObjectProperty(parent as AnyObject, validStep, target)
+            }
+          } else {
+            target = null
+            break
+          }
+        }
+      }
+      if (target != null) {
+        const step = path[maxIndex]
+        const resolvedStep = resolver.resolveValue(step, subcontext)
         const validStep = this._getter.getValidStepFrom(resolvedStep)
         if (validStep != null) {
-          const state = resolver.getResolutionState(context)
-          if (state != null) state.property = 'value'
-          const resolvedValue = resolver.resolveValue(spec.value, context)
+          if (state.parent != null) state.parent.property = 'value'
+          const resolvedValue = resolver.resolveValue(value, context)
           this.setObjectProperty(target as AnyObject, validStep, resolvedValue)
         }
       }
+      if (state.parent != null) state.parent.property = undefined
     }
   }
 

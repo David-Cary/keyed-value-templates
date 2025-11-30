@@ -17,7 +17,7 @@ export type PropertyOwner = AnyObject | AnyFunction;
 /**
  * This defines a request to retrieve a nested value.
  * @interface
- * @property {unknown} source - object containing the target value (defaults to using context)
+ * @property {unknown} source - object containing the target value
  * @property {unknown[]} path - steps to reach the target value
  * @property {unknown} default - value to return if value is not found or is undefined
  */
@@ -35,15 +35,23 @@ export declare class GetNestedValueDirective implements KeyedTemplateDirective<G
     processParams(params: KeyValueMap, context: KeyValueMap, resolver: KeyedTemplateResolver): GetNestedValueParams;
     execute(params: KeyValueMap, context: KeyValueMap, resolver: KeyedTemplateResolver): unknown;
     /**
-     * Steps through a provided path for a given object to try retrieving a particular value.
+     * Uses a validated path to try finding the target value within the provided source.
      * @function
      * @param {unknown} source - expected container for the target value
      * @param {unknown[]} path - steps to reach the target value
-     * @param {KeyValueMap} context - extra data to be made available for resolution
-     * @param {KeyedTemplateResolver} resolver - template resolver to be used
+     * @param {unknown} defaultValue - value to be returned if retrieval fails
      * @returns {unknown} retrieved value, if any
      */
-    resolveUntypedPath(source: unknown, path: unknown[], context: KeyValueMap, resolver: KeyedTemplateResolver): unknown;
+    getNestedValue(source: unknown, path: PropertyLookupStep[], defaultValue?: unknown): unknown;
+    /**
+     * Resolves and validates each step in the provided path.
+     * @function
+     * @param {unknown[]} path - steps to be evaluated
+     * @param {KeyValueMap} context - extra data to be made available for resolution
+     * @param {KeyedTemplateResolver} resolver - template resolver to be used
+     * @returns {unknown} the resolved path if all steps were valid, undefined otherwise
+     */
+    getResolvedPath(path: unknown[], context: KeyValueMap, resolver: KeyedTemplateResolver): PropertyLookupStep[] | undefined;
     /**
      * Tries to convert an unknown value into something we can use as a path step.
      * @function
@@ -51,6 +59,18 @@ export declare class GetNestedValueDirective implements KeyedTemplateDirective<G
      * @returns {unknown} converted step value if conversion is successful
      */
     getValidStepFrom(source: unknown): PropertyLookupStep | undefined;
+    /**
+     * Tries to retrieve a nested value, resolving steps as needed along the way.
+     * Note that this also updates the context's resolution state.
+     * @function
+     * @param {unknown} source - expected container for the target value
+     * @param {unknown[]} path - steps to reach the target value
+     * @param {KeyValueMap} context - extra data to be made available for resolution
+     * @param {KeyedTemplateResolver} resolver - template resolver to be used
+     * @param {unknown} defaultValue - unresolved value to use if target value is undefined
+     * @returns {unknown} retrieved value, if any
+     */
+    getViaUnresolvedPath(source: unknown, path: unknown[], context: KeyValueMap, resolver: KeyedTemplateResolver, defaultValue?: unknown): unknown;
     /**
      * Tries to get the specified property value from the target object or function.
      * @function
@@ -85,5 +105,5 @@ export declare class GetNestedValueDirective implements KeyedTemplateDirective<G
  * @implements {GetNestedValueDirective}
  */
 export declare class GetLocalVariableDirective extends GetNestedValueDirective {
-    execute(params: KeyValueMap, context: KeyValueMap, resolver: KeyedTemplateResolver): unknown;
+    processParams(params: KeyValueMap, context: KeyValueMap, resolver: KeyedTemplateResolver): GetNestedValueParams;
 }

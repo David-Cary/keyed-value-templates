@@ -115,6 +115,8 @@ Note that while we used simple objects here, each of those source properties cou
 
 You can also use this directive to get a reference to the context itself.  Using the default directives `{ $use: 'get' }` will do that for you.  You'll rarely need to use that trick directly, but it may be useful if your template contains or calls functions that want such a reference.
 
+As of version 1.2.4, said directive also has a `getNestedValue` utility function that can be used to retrieve a value without needing to do any resolution.  This makes is useful for general property retrieval even outside template resolution.
+
 Finally, there's a more specialized variant of this directive called the GetLocalVariableDirective.  DEFAULT_DIRECTIVES provide this throught the 'getVar' key.  It operates nearly identically save for 2 factors:
  - It prepends the local variables key to the beginning of the path before executing it, limiting the search to local variables of the current context.
  - It returns the retrieved value directly rather than returning a copy of it.
@@ -196,6 +198,12 @@ Note that this directive uses the same pathing as GetLocalVariableDirective does
   ]
 }
 ```
+
+As of version 1.2.4, this directive also support a `populate` parameter and provides a `setNestedValue` function.
+
+When populate is true, the directive will try to create objects as needed if the pathing fails before finding the final property owner.  For example, if you had an empty object and the path was set to "['items', 0]", it would add an items array to the provided object.
+
+The `setNestedValue` function lets you do the above value setting without any template resolution.  This makes it a useful directive to pull in if you want to safely set a property in an untyped data structure.
 
 ### Loops
 One major offshoot of multistep directives is the LoopingDirective class.  On it's own, this class simply adds an exitPriorities map and a runPass function.  The exitPriorities property is a map of directive ids to priority ratings, numeric values that indicate the loop should react to that directive.  The following priorities are currently supported:

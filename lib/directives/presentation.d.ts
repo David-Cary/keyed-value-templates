@@ -20,4 +20,5 @@ export interface DataViewParameters {
 export declare class DataViewDirective implements KeyedTemplateDirective<DataViewParameters, any> {
     processParams(params: KeyValueMap, context: KeyValueMap, resolver: KeyedTemplateResolver): DataViewParameters;
     execute(params: KeyValueMap, context: KeyValueMap, resolver: KeyedTemplateResolver): unknown;
+    validateTemplate(template: any, context: KeyValueMap, resolver: KeyedTemplateResolver): boolean;
 }

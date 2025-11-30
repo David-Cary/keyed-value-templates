@@ -94,7 +94,7 @@ export class DataViewDirective implements KeyedTemplateDirective<DataViewParamet
     const result = resolver.resolveValue(spec.template, localContext)
     return result
   }
-  
+
   validateTemplate (
     template: any,
     context: KeyValueMap,

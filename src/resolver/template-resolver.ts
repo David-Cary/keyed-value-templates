@@ -429,7 +429,7 @@ export class KeyedTemplateResolver {
     context: KeyValueMap,
     state: ObjectResolutionState
   ): void {
-    if (this.resolutionStateKey != '') {
+    if (this.resolutionStateKey !== '') {
       context[this.resolutionStateKey] = state
     }
   }
@@ -445,7 +445,7 @@ export class KeyedTemplateResolver {
     context: KeyValueMap,
     state: ObjectResolutionState
   ): KeyValueMap {
-    if (this.resolutionStateKey != '') {
+    if (this.resolutionStateKey !== '') {
       this.setParentStateOf(state, context)
       const subcontext = { ...context }
       subcontext[this.resolutionStateKey] = state
@@ -590,7 +590,7 @@ export class KeyedTemplateResolver {
         try {
           result[key] = this.createDeepCopy(valueMap[key], copyMap, path)
         } catch (error: any) {
-          throw(new Error(JSON.stringify({error: error.message,path, key})))
+          throw (new Error(JSON.stringify({ error: error.message, path, key })))
         }
         path.pop()
       }

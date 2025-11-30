@@ -172,22 +172,49 @@ export declare class RepetitionDirective extends LoopingDirective {
 /**
  * Specifies the path to a given nested value and what it should be set to.
  * @interface
+ * @property {unknown} source - root object to be modified
  * @property {unknown[]} path - steps to the value's destination
  * @property {unknown} value - value to be stored
+ * @property {boolean} populate - signals whether subcontainers should be created
  */
-export interface SetLocalValueParams {
+export interface SetNestedValueParams {
+    source: unknown;
     path: unknown[];
     value: unknown;
+    populate: boolean;
 }
 /**
  * This directive tries to assign a value to a particular path within the current context's local variables.
  * @class
- * @implements {KeyedTemplateDirective<SetLocalValueParams>}
+ * @implements {KeyedTemplateDirective<SetNestedValueParams>}
  */
-export declare class SetLocalValueDirective implements KeyedTemplateDirective<SetLocalValueParams> {
+export declare class SetLocalValueDirective implements KeyedTemplateDirective<SetNestedValueParams> {
     protected _getter: GetNestedValueDirective;
-    processParams(params: KeyValueMap, context: KeyValueMap, resolver: KeyedTemplateResolver): SetLocalValueParams;
+    processParams(params: KeyValueMap, context: KeyValueMap, resolver: KeyedTemplateResolver): SetNestedValueParams;
     execute(params: KeyValueMap, context: KeyValueMap, resolver: KeyedTemplateResolver): void;
+    /**
+     * Uses a validated path to try setting the target value within the provided source.
+     * @function
+     * @param {unknown} source - expected container for the target value
+     * @param {unknown[]} path - steps to reach the target value
+     * @param {unknown} value - value to be assigned
+     * @param {boolean} populate - signals whether subcontainers should be created
+     */
+    setNestedValue(source: unknown, path: PropertyLookupStep[], value: unknown, populate?: boolean): void;
+    /**
+     * Tries to set a nested property via an unresolved path and value.
+     * The main advantages of using this over resolving everything and using setNestedValue
+     * are that it will skip resolution if there's an invalid step and that it updates the
+     * context's resolution state.
+     * @function
+     * @param {unknown} source - root object for the target property
+     * @param {unknown[]} path - unresolved path to the target property
+     * @param {unknown} value - value to be assigned
+     * @param {KeyValueMap} context - extra resolution data
+     * @param {KeyedTemplateResolver} resolver - template resolver to be used
+     * @param {boolean} populate - signals whether subcontainers should be created
+     */
+    setUnresolvedValue(source: unknown, path: unknown[], value: unknown, context: KeyValueMap, resolver: KeyedTemplateResolver, populate?: boolean): void;
     /**
      * Attaches the provided value to a property of the target object.
      * @function

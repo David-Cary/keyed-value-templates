@@ -31,7 +31,7 @@ export type PropertyOwner = AnyObject | AnyFunction
 /**
  * This defines a request to retrieve a nested value.
  * @interface
- * @property {unknown} source - object containing the target value (defaults to using context)
+ * @property {unknown} source - object containing the target value
  * @property {unknown[]} path - steps to reach the target value
  * @property {unknown} default - value to return if value is not found or is undefined
  */
@@ -76,49 +76,64 @@ export class GetNestedValueDirective implements KeyedTemplateDirective<GetNested
     resolver: KeyedTemplateResolver
   ): unknown {
     const spec = this.processParams(params, context, resolver)
-    const value = this.resolveUntypedPath(
+    const value = this.getViaUnresolvedPath(
       spec.source,
       spec.path,
       context,
-      resolver
+      resolver,
+      spec.default
     )
-    if (value === undefined && spec.default !== undefined) {
-      const state = resolver.getResolutionState(context)
-      if (state != null) state.property = 'default'
-      return resolver.resolveValue(spec.default, context)
-    }
     return resolver.createDeepCopy(value)
   }
 
   /**
-   * Steps through a provided path for a given object to try retrieving a particular value.
+   * Uses a validated path to try finding the target value within the provided source.
    * @function
    * @param {unknown} source - expected container for the target value
    * @param {unknown[]} path - steps to reach the target value
-   * @param {KeyValueMap} context - extra data to be made available for resolution
-   * @param {KeyedTemplateResolver} resolver - template resolver to be used
+   * @param {unknown} defaultValue - value to be returned if retrieval fails
    * @returns {unknown} retrieved value, if any
    */
-  resolveUntypedPath (
+  getNestedValue (
     source: unknown,
+    path: PropertyLookupStep[],
+    defaultValue?: unknown
+  ): unknown {
+    let target = source
+    for (const step of path) {
+      if (target != null) {
+        const parent = target as PropertyOwner
+        target = this.resolveStep(parent, step)
+      } else return defaultValue
+    }
+    return target
+  }
+
+  /**
+   * Resolves and validates each step in the provided path.
+   * @function
+   * @param {unknown[]} path - steps to be evaluated
+   * @param {KeyValueMap} context - extra data to be made available for resolution
+   * @param {KeyedTemplateResolver} resolver - template resolver to be used
+   * @returns {unknown} the resolved path if all steps were valid, undefined otherwise
+   */
+  getResolvedPath (
     path: unknown[],
     context: KeyValueMap,
     resolver: KeyedTemplateResolver
-  ): unknown {
+  ): PropertyLookupStep[] | undefined {
     const state: ObjectResolutionState = { source: path }
     const subcontext = resolver.createChildStateContext(context, state)
-    let target: unknown = source ?? subcontext
+    const resolvedPath: PropertyLookupStep[] = []
     for (state.index = 0; state.index < path.length; state.index++) {
       const step = path[state.index]
-      if (target != null) {
-        const parent = target as PropertyOwner
-        const resolvedStep = resolver.resolveValue(step, subcontext)
-        const validStep = this.getValidStepFrom(resolvedStep)
-        if (validStep == null) return undefined
-        target = this.resolveStep(parent, validStep)
+      const resolvedStep = resolver.resolveValue(step, subcontext)
+      const validStep = this.getValidStepFrom(resolvedStep)
+      if (validStep != null) {
+        resolvedPath.push(validStep)
       } else return undefined
     }
-    return target
+    return resolvedPath
   }
 
   /**
@@ -146,6 +161,46 @@ export class GetNestedValueDirective implements KeyedTemplateDirective<GetNested
         break
       }
     }
+  }
+
+  /**
+   * Tries to retrieve a nested value, resolving steps as needed along the way.
+   * Note that this also updates the context's resolution state.
+   * @function
+   * @param {unknown} source - expected container for the target value
+   * @param {unknown[]} path - steps to reach the target value
+   * @param {KeyValueMap} context - extra data to be made available for resolution
+   * @param {KeyedTemplateResolver} resolver - template resolver to be used
+   * @param {unknown} defaultValue - unresolved value to use if target value is undefined
+   * @returns {unknown} retrieved value, if any
+   */
+  getViaUnresolvedPath (
+    source: unknown,
+    path: unknown[],
+    context: KeyValueMap,
+    resolver: KeyedTemplateResolver,
+    defaultValue?: unknown
+  ): unknown {
+    const state: ObjectResolutionState = { source: path }
+    const subcontext = resolver.createChildStateContext(context, state)
+    let target: unknown = source ?? subcontext
+    if (state.parent != null) state.parent.property = 'path'
+    for (state.index = 0; state.index < path.length; state.index++) {
+      const step = path[state.index]
+      if (target != null) {
+        const parent = target as PropertyOwner
+        const resolvedStep = resolver.resolveValue(step, subcontext)
+        const validStep = this.getValidStepFrom(resolvedStep)
+        if (validStep == null) return
+        target = this.resolveStep(parent, validStep)
+      } else break
+    }
+    if (target === undefined && defaultValue !== undefined) {
+      if (state.parent != null) state.parent.property = 'default'
+      target = resolver.resolveValue(defaultValue, context)
+    }
+    if (state.parent != null) state.parent.property = undefined
+    return target
   }
 
   /**
@@ -234,20 +289,21 @@ export class GetNestedValueDirective implements KeyedTemplateDirective<GetNested
  * @implements {GetNestedValueDirective}
  */
 export class GetLocalVariableDirective extends GetNestedValueDirective {
-  execute (
+  processParams (
     params: KeyValueMap,
     context: KeyValueMap,
     resolver: KeyedTemplateResolver
-  ): unknown {
-    const spec = this.processParams(params, context, resolver)
-    const fullPath = spec.path.slice()
-    fullPath.unshift(resolver.localVariablesKey)
-    const value = this.resolveUntypedPath(
-      spec.source,
-      fullPath,
-      context,
-      resolver
-    )
-    return value
+  ): GetNestedValueParams {
+    const state = resolver.getResolutionState(context)
+    return {
+      source: context[resolver.localVariablesKey],
+      path: resolver.processParameter(
+        params,
+        'path',
+        (value) => resolver.getArray(value, context),
+        state
+      ),
+      default: params.default
+    }
   }
 }

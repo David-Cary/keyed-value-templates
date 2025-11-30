@@ -197,7 +197,7 @@ export class ValueInRangeDirective implements KeyedTemplateDirective<ValueInRang
     resolver: KeyedTemplateResolver
   ): ValueInRangeParams {
     const state = resolver.getResolutionState(context)
-    const resolveValue = (value: any) => resolver.resolveValue(value, context)
+    const resolveValue = (value: any): any => resolver.resolveValue(value, context)
     return {
       min: resolver.processParameter(params, 'min', resolveValue, state),
       max: resolver.processParameter(params, 'max', resolveValue, state),
