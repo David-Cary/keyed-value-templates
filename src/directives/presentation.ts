@@ -1,6 +1,7 @@
 import {
   type KeyedTemplateResolver,
-  type KeyedTemplateDirective
+  type KeyedTemplateDirective,
+  type ObjectResolutionState
 } from '../resolver/template-resolver'
 import {
   type KeyValueMap
@@ -25,18 +26,35 @@ export interface DataViewParameters {
  * @implements {KeyedTemplateDirective<DataViewParameters>}
  */
 export class DataViewDirective implements KeyedTemplateDirective<DataViewParameters, any> {
-  processParams (
+  preprocessTemplates: boolean
+  dataValueKey = 'value'
+  
+  constructor(preprocessTemplates = true) {
+    this.preprocessTemplates = preprocessTemplates
+  }
+  
+  getDataParameter (
     params: KeyValueMap,
     context: KeyValueMap,
-    resolver: KeyedTemplateResolver
-  ): DataViewParameters {
-    const state = resolver.getResolutionState(context)
+    resolver: KeyedTemplateResolver,
+    state?: ObjectResolutionState
+  ): any {
     const resolvedData = resolver.processParameter(
       params,
       'data',
       (value) => resolver.resolveValue(value, context),
       state
     )
+    const result = resolver.convertToRecord(resolvedData, this.dataValueKey)
+    return result
+  }
+  
+  getTemplateParameter (
+    params: KeyValueMap,
+    context: KeyValueMap,
+    resolver: KeyedTemplateResolver,
+    state?: ObjectResolutionState
+  ): any {
     const preprocess = params.preprocess != null
       ? resolver.processParameter(
         params,
@@ -44,24 +62,28 @@ export class DataViewDirective implements KeyedTemplateDirective<DataViewParamet
         (value) => resolver.resolveTypedValue(value, context, Boolean),
         state
       )
-      : true
+      : this.preprocessTemplates
     const templateProperty = 'template' in params ? 'template' : 'via'
-    return {
-      data: (
-        typeof resolvedData === 'object' &&
-          resolvedData != null &&
-          !Array.isArray(resolvedData)
+    const result = preprocess
+      ? resolver.processParameter(
+        params,
+        templateProperty,
+        (value) => resolver.resolveValue(value, context),
+        state
       )
-        ? resolvedData as KeyValueMap
-        : {},
-      template: preprocess
-        ? resolver.processParameter(
-          params,
-          templateProperty,
-          (value) => resolver.resolveValue(value, context),
-          state
-        )
-        : params[templateProperty],
+      : params[templateProperty]
+    return result
+  }
+  
+  processParams (
+    params: KeyValueMap,
+    context: KeyValueMap,
+    resolver: KeyedTemplateResolver
+  ): DataViewParameters {
+    const state = resolver.getResolutionState(context)
+    return {
+      data: this.getDataParameter(params, context, resolver, state),
+      template: this.getTemplateParameter(params, context, resolver, state),
       templateKey: resolver.processParameter(
         params,
         'templateKey',

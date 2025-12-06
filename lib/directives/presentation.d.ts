@@ -1,4 +1,4 @@
-import { type KeyedTemplateResolver, type KeyedTemplateDirective } from '../resolver/template-resolver';
+import { type KeyedTemplateResolver, type KeyedTemplateDirective, type ObjectResolutionState } from '../resolver/template-resolver';
 import { type KeyValueMap } from '../resolver/basic-types';
 /**
  * Covers requests to resolve a template using the provided local variables.
@@ -18,6 +18,11 @@ export interface DataViewParameters {
  * @implements {KeyedTemplateDirective<DataViewParameters>}
  */
 export declare class DataViewDirective implements KeyedTemplateDirective<DataViewParameters, any> {
+    preprocessTemplates: boolean;
+    dataValueKey: string;
+    constructor(preprocessTemplates?: boolean);
+    getDataParameter(params: KeyValueMap, context: KeyValueMap, resolver: KeyedTemplateResolver, state?: ObjectResolutionState): any;
+    getTemplateParameter(params: KeyValueMap, context: KeyValueMap, resolver: KeyedTemplateResolver, state?: ObjectResolutionState): any;
     processParams(params: KeyValueMap, context: KeyValueMap, resolver: KeyedTemplateResolver): DataViewParameters;
     execute(params: KeyValueMap, context: KeyValueMap, resolver: KeyedTemplateResolver): unknown;
     validateTemplate(template: any, context: KeyValueMap, resolver: KeyedTemplateResolver): boolean;

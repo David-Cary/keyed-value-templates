@@ -392,6 +392,8 @@ As of 1.1.4, a couple optional parameters have been added:
  - The "preprocess" flag tells the directive to perform the aforementioned initial template resolution.  If set to false that step will be skipped, letting you use a template directive with out needing to nest it in a literal.  This defaults to true, so if the property is not included the template will get that initial resolution pass as normal.
  - The "via" property simply acts as a shorter alias to the template property, with template taking precedence if both are present.
 
+As of 1.2.5, the directive has a `preprocessTemplates` property which sets the default value of the preprocess flag.
+
 Here's what the first example looks like with both of those in effect:
 ```
 {

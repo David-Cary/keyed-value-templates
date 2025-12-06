@@ -531,30 +531,30 @@ export class KeyedTemplateResolver {
   }
 
   /**
-   * Resolves the target as a template and converts the results to a key value map.
-   * For strings, this wraps them in an object where the key and value are the same.
-   * Any results that can't be treated that way wrap the results as the object's 'value' property.
+   * Converts the provided value to a plain javascript object.
    * @function
-   * @param {unknown} value - value to be converted
-   * @param {KeyValueMap} context - extra data to be made available for resolution
-   * @returns {KeyValueMap} resolved value as a key value map
+   * @param {any} source - value to be converted
+   * @param {string} valueKey - key to use if the source is a primitive value
+   * @returns {KeyValueMap} value as a key value map
    */
-  getValueMap (
-    value: unknown,
-    context: KeyValueMap = {}
+  convertToRecord (
+    source: any,
+    valueKey = ''
   ): KeyValueMap {
-    const resolved = this.executeDirectiveFor(value, context)
-    if (typeof resolved === 'object' && resolved != null) {
-      return resolved as KeyValueMap
-    }
-    if (typeof resolved === 'string') {
-      return {
-        [resolved]: resolved
+    if(typeof source === 'object' && source != null) {
+      if (Array.isArray(source)) {
+        const values: KeyValueMap = {}
+        for (const index in source) {
+          const key = String(index)
+          values[key] = source[index]
+        }
       }
+      return source
     }
-    return {
-      value: resolved
+    if (valueKey !== '') {
+      return { [valueKey]: source }
     }
+    return {}
   }
 
   /**

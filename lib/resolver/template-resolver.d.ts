@@ -265,15 +265,13 @@ export declare class KeyedTemplateResolver {
      */
     validateResolutionState(value: any): ObjectResolutionState | undefined;
     /**
-     * Resolves the target as a template and converts the results to a key value map.
-     * For strings, this wraps them in an object where the key and value are the same.
-     * Any results that can't be treated that way wrap the results as the object's 'value' property.
+     * Converts the provided value to a plain javascript object.
      * @function
-     * @param {unknown} value - value to be converted
-     * @param {KeyValueMap} context - extra data to be made available for resolution
-     * @returns {KeyValueMap} resolved value as a key value map
+     * @param {any} source - value to be converted
+     * @param {string} valueKey - key to use if the source is a primitive value
+     * @returns {KeyValueMap} value as a key value map
      */
-    getValueMap(value: unknown, context?: KeyValueMap): KeyValueMap;
+    convertToRecord(source: any, valueKey?: string): KeyValueMap;
     /**
      * Produces a deep copy of the target value, ignoring all directive markers.
      * This means all objects in the copy are themselves copies, meaning they can altered without affecting the original.
